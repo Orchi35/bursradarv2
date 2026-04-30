@@ -10,7 +10,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { EXAMS, SCHOOLS } from '../../data/mock';
 
-export default function BursRadarDesignScreen() {
+export default function HomeScreen() {
   if (Platform.OS !== 'web') {
     return <NativeHomeScreen />;
   }

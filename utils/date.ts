@@ -45,11 +45,6 @@ export function registrationStatus(school: { registrationStartDate?: string; reg
   return { state: 'open', label: 'Kayıtlar Açık' };
 }
 
-export function schoolInitials(name: string): string {
-  const words = name.split(' ').filter((w) => w.toLocaleLowerCase('tr-TR') !== 'özel');
-  return words.slice(0, 2).map((w) => w[0]).join('').toLocaleUpperCase('tr-TR');
-}
-
 function parseIsoDate(iso: string): Date {
   const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return new Date(iso);

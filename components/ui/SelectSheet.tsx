@@ -1,3 +1,4 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, RADIUS, SHADOW } from '../../constants/theme';
@@ -19,8 +20,8 @@ export default function SelectSheet({ open, title, options, value, onSelect, onC
           <View style={s.handle} />
           <View style={s.header}>
             <Text style={s.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={s.closeBtn}>
-              <Text style={s.closeText}>x</Text>
+            <TouchableOpacity onPress={onClose} style={s.closeBtn} accessibilityRole="button" accessibilityLabel="Kapat">
+              <FontAwesome name="times" size={16} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
           <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
@@ -49,7 +50,6 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
   title: { fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
   closeBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: 16, color: COLORS.textMuted, fontWeight: '700' },
   body: { paddingHorizontal: 12, paddingTop: 6 },
   option: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 12, borderRadius: RADIUS.md, marginBottom: 2 },
   optionOn: { backgroundColor: COLORS.primaryLighter },

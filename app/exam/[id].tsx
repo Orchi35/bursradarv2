@@ -109,10 +109,19 @@ function InfoBlock({ title, text }: { title: string; text: string }) {
   );
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  official_website: 'Resmi web sitesi',
+  social_media: 'Sosyal medya',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  twitter: 'X / Twitter',
+  phone: 'Telefon',
+  email: 'E-posta',
+  manual: 'Manuel girdi',
+};
+
 function sourceLabel(source: string) {
-  if (source === 'official_website') return 'Resmi web sitesi';
-  if (source === 'social_media') return 'Sosyal medya';
-  return source;
+  return SOURCE_LABELS[source] ?? source;
 }
 
 function normalizeUrl(url: string) {

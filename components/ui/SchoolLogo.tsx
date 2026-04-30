@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { schoolInitials } from '../../utils/date';
+import { schoolInitials } from '../../utils/format';
 import { School } from '../../types';
 
 export default function SchoolLogo({ school, size = 42 }: { school: School; size?: number }) {

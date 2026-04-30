@@ -61,9 +61,7 @@ export async function cancelExamReminder(examId: string) {
 }
 
 export async function syncExamReminders(examIds: string[]) {
-  for (const examId of examIds) {
-    await scheduleExamReminder(examId);
-  }
+  await Promise.all(examIds.map((id) => scheduleExamReminder(id)));
 }
 
 async function getNotifications(): Promise<ExpoNotifications> {

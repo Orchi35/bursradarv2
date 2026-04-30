@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '../utils/supabaseClient';
 import { cancelExamReminder, scheduleExamReminder, syncExamReminders } from '../utils/notifications';
@@ -94,15 +94,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (error) console.warn('[AppContext] Plan kaydedilemedi.', error);
   }, [auth.user]);
 
-  function toggleFavorite(id: string) {
+  const toggleFavorite = useCallback((id: string) => {
     const next = !favorites.includes(id);
     setFavorites(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
     persistMark(id, { is_favorite: next });
-  }
+  }, [favorites, persistMark]);
 
-  function toggleReminder(id: string) {
+  const toggleReminder = useCallback((id: string) => {
     const next = !reminders.includes(id);
     setReminders(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -119,17 +119,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.warn('[AppContext] Hatırlatma iptal edilemedi.', err);
       });
     }
-  }
+  }, [reminders, persistMark]);
+
+  const value = useMemo(() => ({
+    favorites,
+    reminders,
+    toggleFavorite,
+    toggleReminder,
+    isFavorite: (id: string) => favorites.includes(id),
+    hasReminder: (id: string) => reminders.includes(id),
+  }), [favorites, reminders, toggleFavorite, toggleReminder]);
 
   return (
-    <AppContext.Provider value={{
-      favorites,
-      reminders,
-      toggleFavorite,
-      toggleReminder,
-      isFavorite: (id) => favorites.includes(id),
-      hasReminder: (id) => reminders.includes(id),
-    }}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
