@@ -1,8 +1,30 @@
+import 'react-native-url-polyfill/auto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient } from '@supabase/supabase-js';
+
 type SupabaseMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const REQUEST_TIMEOUT_MS = 12000;
+const isServerRender = typeof window === 'undefined';
+
+const authStorage = {
+  getItem: (key: string) => isServerRender ? Promise.resolve(null) : AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => isServerRender ? Promise.resolve() : AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => isServerRender ? Promise.resolve() : AsyncStorage.removeItem(key),
+};
+
+export const supabase = isSupabaseConfigured()
+  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      auth: {
+        storage: authStorage,
+        autoRefreshToken: !isServerRender,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : null;
 
 export function isSupabaseConfigured() {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);

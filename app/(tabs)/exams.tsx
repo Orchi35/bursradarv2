@@ -38,7 +38,9 @@ export default function ExamsScreen() {
           <Text style={[styles.openText, onlyOpen && styles.openTextOn]}>Açık başvurular</Text>
         </TouchableOpacity>
       </View>
-      {filtered.map((exam) => (
+      {filtered.length === 0 ? (
+        <Text style={styles.empty}>Bu filtrelere uygun sınav bulunamadı.</Text>
+      ) : filtered.map((exam) => (
         <ExamCard
           key={exam.id}
           exam={exam}
@@ -72,4 +74,5 @@ const styles = StyleSheet.create({
   openButtonOn: { backgroundColor: COLORS.primaryLighter, borderColor: COLORS.primaryLight },
   openText: { color: COLORS.textSecondary, fontWeight: '800' },
   openTextOn: { color: COLORS.primaryMid },
+  empty: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700', paddingVertical: 28 },
 });

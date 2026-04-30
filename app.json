@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "bursradar-v2",
-    "slug": "bursradar-v2",
+    "name": "BursRadar",
+    "slug": "bursradar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bursradarv2",
+    "scheme": "bursradar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -17,6 +17,11 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.orchi35.bursradar",
+      "versionCode": 1,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -30,7 +35,13 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "exam-reminders"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

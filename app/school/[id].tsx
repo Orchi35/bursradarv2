@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ExamCard from '../../components/ExamCard';
 import { Screen } from '../../components/Screen';
 import SchoolLogo from '../../components/ui/SchoolLogo';
@@ -53,12 +53,20 @@ export default function SchoolDetailScreen() {
         </View>
       )}
       <View style={styles.contact}>
-        {!!school.phone && <Text style={styles.contactText}><FontAwesome name="phone" /> {school.phone}</Text>}
-        {!!school.website && <Text style={styles.contactText}><FontAwesome name="globe" /> {school.website}</Text>}
-        {!!school.instagram && <Text style={styles.contactText}><FontAwesome name="instagram" /> {school.instagram}</Text>}
+        {!!school.phone && (
+          <ContactLink icon="phone" label={school.phone} url={`tel:${school.phone.replace(/\s+/g, '')}`} />
+        )}
+        {!!school.website && (
+          <ContactLink icon="globe" label={school.website} url={normalizeWebsiteUrl(school.website)} />
+        )}
+        {!!school.instagram && (
+          <ContactLink icon="instagram" label={school.instagram} url={normalizeInstagramUrl(school.instagram)} />
+        )}
       </View>
       <Text style={styles.sectionTitle}>Sınavlar</Text>
-      {exams.map((exam) => (
+      {exams.length === 0 ? (
+        <Text style={styles.empty}>Bu okul için takip edilen sınav bulunmuyor.</Text>
+      ) : exams.map((exam) => (
         <ExamCard
           key={exam.id}
           exam={exam}
@@ -70,6 +78,32 @@ export default function SchoolDetailScreen() {
       ))}
     </Screen>
   );
+}
+
+function ContactLink({ icon, label, url }: { icon: React.ComponentProps<typeof FontAwesome>['name']; label: string; url: string }) {
+  async function openLink() {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    }
+  }
+
+  return (
+    <TouchableOpacity accessibilityRole="link" style={styles.contactLink} onPress={openLink}>
+      <FontAwesome name={icon} color={COLORS.primaryMid} size={15} />
+      <Text style={styles.contactText}>{label}</Text>
+      <FontAwesome name="external-link" color={COLORS.textMuted} size={12} />
+    </TouchableOpacity>
+  );
+}
+
+function normalizeWebsiteUrl(url: string) {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+function normalizeInstagramUrl(handle: string) {
+  if (/^https?:\/\//i.test(handle)) return handle;
+  return `https://www.instagram.com/${handle.replace(/^@/, '')}`;
 }
 
 const styles = StyleSheet.create({
@@ -84,7 +118,9 @@ const styles = StyleSheet.create({
   infoCard: { backgroundColor: COLORS.successLight, borderRadius: RADIUS.lg, padding: 14, marginTop: 14 },
   infoTitle: { color: COLORS.success, fontWeight: '900', fontSize: 16 },
   infoText: { color: COLORS.textSecondary, marginTop: 4 },
-  contact: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, gap: 8, marginTop: 14, borderWidth: 1, borderColor: COLORS.borderLight },
-  contactText: { color: COLORS.textPrimary, fontWeight: '700' },
+  contact: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 10, gap: 6, marginTop: 14, borderWidth: 1, borderColor: COLORS.borderLight },
+  contactLink: { flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: RADIUS.md, paddingHorizontal: 8, paddingVertical: 9 },
+  contactText: { color: COLORS.textPrimary, fontWeight: '700', flex: 1 },
   sectionTitle: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', marginTop: 22, marginBottom: 12 },
+  empty: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700', paddingVertical: 20 },
 });

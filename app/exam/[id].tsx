@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../../components/Screen';
 import SchoolLogo from '../../components/ui/SchoolLogo';
 import ScoreBadge from '../../components/ui/ScoreBadge';
@@ -76,6 +76,17 @@ export default function ExamDetailScreen() {
           <Text style={[styles.actionText, app.hasReminder(exam.id) && styles.actionTextOn]}>{app.hasReminder(exam.id) ? 'Hatırlatma açık' : 'Hatırlat'}</Text>
         </TouchableOpacity>
       </View>
+
+      {!!exam.applicationUrl && (
+        <TouchableOpacity
+          accessibilityRole="link"
+          style={styles.applyButton}
+          onPress={() => Linking.openURL(normalizeUrl(exam.applicationUrl!))}
+        >
+          <FontAwesome name="external-link" size={15} color={COLORS.white} />
+          <Text style={styles.applyText}>Başvuru sayfasını aç</Text>
+        </TouchableOpacity>
+      )}
     </Screen>
   );
 }
@@ -104,6 +115,10 @@ function sourceLabel(source: string) {
   return source;
 }
 
+function normalizeUrl(url: string) {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 const styles = StyleSheet.create({
   missing: { color: COLORS.textPrimary, fontWeight: '800' },
   back: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
@@ -130,4 +145,6 @@ const styles = StyleSheet.create({
   actionOn: { backgroundColor: COLORS.primaryLighter, borderColor: COLORS.primaryLight },
   actionText: { color: COLORS.textSecondary, fontWeight: '900' },
   actionTextOn: { color: COLORS.primaryMid },
+  applyButton: { marginTop: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, borderRadius: RADIUS.md, backgroundColor: COLORS.primaryMid, paddingVertical: 14 },
+  applyText: { color: COLORS.white, fontWeight: '900' },
 });

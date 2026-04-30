@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, RADIUS, SHADOW } from '../constants/theme';
 import { getSchool } from '../data/mock';
 import { Exam } from '../types';
@@ -90,8 +90,13 @@ function DateItem({ label, value, urgent }: { label: string; value: string; urge
 }
 
 function Action({ icon, label, active, onPress }: { icon: React.ComponentProps<typeof FontAwesome>['name']; label: string; active?: boolean; onPress: () => void }) {
+  function handlePress(event: GestureResponderEvent) {
+    event.stopPropagation();
+    onPress();
+  }
+
   return (
-    <TouchableOpacity style={[styles.action, active && styles.actionOn]} onPress={onPress}>
+    <TouchableOpacity accessibilityRole="button" style={[styles.action, active && styles.actionOn]} onPress={handlePress}>
       <FontAwesome name={icon} size={13} color={active ? COLORS.primaryMid : COLORS.textSecondary} />
       <Text style={[styles.actionText, active && styles.actionTextOn]}>{label}</Text>
     </TouchableOpacity>

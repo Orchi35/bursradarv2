@@ -1,5 +1,5 @@
 export function daysUntil(iso: string): number {
-  const d = new Date(iso);
+  const d = parseIsoDate(iso);
   d.setHours(0, 0, 0, 0);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -7,13 +7,13 @@ export function daysUntil(iso: string): number {
 }
 
 export function formatDate(iso: string): string {
-  const d = new Date(iso);
+  const d = parseIsoDate(iso);
   const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
   return `${d.getDate()} ${months[d.getMonth()]}`;
 }
 
 export function formatLongDate(iso: string): string {
-  const d = new Date(iso);
+  const d = parseIsoDate(iso);
   const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
   const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} - ${days[d.getDay()]}`;
@@ -38,8 +38,8 @@ export function urgency(iso: string): 'past' | 'urgent' | 'soon' | 'normal' {
 export function registrationStatus(school: { registrationStartDate?: string; registrationDeadline?: string }): { state: 'open' | 'upcoming' | 'closed'; label: string } | null {
   if (!school.registrationStartDate || !school.registrationDeadline) return null;
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const start = new Date(school.registrationStartDate); start.setHours(0, 0, 0, 0);
-  const end = new Date(school.registrationDeadline); end.setHours(0, 0, 0, 0);
+  const start = parseIsoDate(school.registrationStartDate); start.setHours(0, 0, 0, 0);
+  const end = parseIsoDate(school.registrationDeadline); end.setHours(0, 0, 0, 0);
   if (today < start) return { state: 'upcoming', label: 'Kayıt Yakında' };
   if (today > end) return { state: 'closed', label: 'Kayıt Kapandı' };
   return { state: 'open', label: 'Kayıtlar Açık' };
@@ -48,4 +48,10 @@ export function registrationStatus(school: { registrationStartDate?: string; reg
 export function schoolInitials(name: string): string {
   const words = name.split(' ').filter((w) => w.toLocaleLowerCase('tr-TR') !== 'özel');
   return words.slice(0, 2).map((w) => w[0]).join('').toLocaleUpperCase('tr-TR');
+}
+
+function parseIsoDate(iso: string): Date {
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return new Date(iso);
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }

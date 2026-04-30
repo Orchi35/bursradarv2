@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import SchoolCard from '../../components/SchoolCard';
 import { Header, Screen } from '../../components/Screen';
 import { COLORS, RADIUS } from '../../constants/theme';
@@ -25,7 +25,9 @@ export default function SchoolsScreen() {
           style={styles.input}
         />
       </View>
-      {schools.map((school) => <SchoolCard key={school.id} school={school} />)}
+      {schools.length === 0 ? (
+        <Text style={styles.empty}>Bu aramaya uygun okul bulunamadı.</Text>
+      ) : schools.map((school) => <SchoolCard key={school.id} school={school} />)}
     </Screen>
   );
 }
@@ -33,4 +35,5 @@ export default function SchoolsScreen() {
 const styles = StyleSheet.create({
   searchBox: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.borderLight, paddingHorizontal: 12, marginBottom: 14 },
   input: { color: COLORS.textPrimary, fontSize: 15, paddingVertical: 12 },
+  empty: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700', paddingVertical: 28 },
 });

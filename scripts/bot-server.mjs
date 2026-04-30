@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const __dir = dirname(fileURLToPath(import.meta.url));
 const root = join(__dir, '..');
 const port = Number(process.env.BOT_SERVER_PORT || 8787);
+const host = process.env.BOT_SERVER_HOST || '127.0.0.1';
 let isRunning = false;
 
 function sendJson(res, status, body) {
@@ -78,6 +79,6 @@ createServer((req, res) => {
   }
 
   sendJson(res, 404, { ok: false, error: 'Bulunamadı.' });
-}).listen(port, () => {
-  console.log(`BursRadar bot server http://localhost:${port}`);
+}).listen(port, host, () => {
+  console.log(`BursRadar bot server http://${host}:${port}`);
 });

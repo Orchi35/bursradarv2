@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { AppProvider } from '../context/AppContext';
+import { AuthProvider } from '../context/AuthContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -30,14 +31,17 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <AppProvider>
-      <ThemeProvider value={DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="school/[id]" />
-          <Stack.Screen name="exam/[id]" />
-        </Stack>
-      </ThemeProvider>
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <ThemeProvider value={DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="auth" />
+            <Stack.Screen name="school/[id]" />
+            <Stack.Screen name="exam/[id]" />
+          </Stack>
+        </ThemeProvider>
+      </AppProvider>
+    </AuthProvider>
   );
 }
