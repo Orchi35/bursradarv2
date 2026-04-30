@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './AuthContext';
+import { useData } from './DataContext';
 import { supabase } from '../utils/supabaseClient';
 import { cancelExamReminder, scheduleExamReminder, syncExamReminders } from '../utils/notifications';
 
@@ -23,6 +24,7 @@ const AppContext = createContext<AppContextType>({
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
+  const { getExam, getSchool } = useData();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
 
@@ -51,7 +53,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const nextReminders = (data ?? []).filter((row) => row.has_reminder).map((row) => row.exam_id);
       setFavorites(nextFavorites);
       setReminders(nextReminders);
-      syncExamReminders(nextReminders).catch((err) => {
+
+      const reminderEntries = nextReminders.flatMap((id) => {
+        const exam = getExam(id);
+        if (!exam) return [];
+        const school = getSchool(exam.schoolId);
+        return [{ exam, schoolName: school?.name }];
+      });
+      syncExamReminders(reminderEntries).catch((err) => {
         console.warn('[AppContext] Hatırlatmalar senkronize edilemedi.', err);
       });
     }
@@ -61,7 +70,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [auth.user]);
+  }, [auth.user, getExam, getSchool]);
 
   const persistMark = useCallback(async (examId: string, partial: { is_favorite?: boolean; has_reminder?: boolean }) => {
     if (!auth.user || !supabase) return;
@@ -108,8 +117,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
     persistMark(id, { has_reminder: next });
-    if (next) {
-      scheduleExamReminder(id).then((scheduled) => {
+
+    const exam = getExam(id);
+    if (next && exam) {
+      const school = getSchool(exam.schoolId);
+      scheduleExamReminder(exam, school?.name).then((scheduled) => {
         if (!scheduled) {
           console.warn('[AppContext] Bildirim izni verilmedi veya bu platformda desteklenmiyor.');
         }
@@ -119,7 +131,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.warn('[AppContext] Hatırlatma iptal edilemedi.', err);
       });
     }
-  }, [reminders, persistMark]);
+  }, [reminders, persistMark, getExam, getSchool]);
 
   const value = useMemo(() => ({
     favorites,

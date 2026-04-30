@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const BOT_SECRET = Deno.env.get("SUPABASE_BOT_SECRET");
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -516,11 +517,18 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== "POST") return jsonResponse({ ok: false, error: "Only POST is supported." }, 405);
 
+  if (BOT_SECRET) {
+    const authHeader = req.headers.get("authorization") ?? "";
+    if (authHeader !== `Bearer ${BOT_SECRET}`) {
+      return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+    }
+  }
+
   try {
     return jsonResponse(await runBot());
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[run-bot]", message);
-    return jsonResponse({ ok: false, error: message }, 500);
+    return jsonResponse({ ok: false, error: "Bot çalışırken hata oluştu." }, 500);
   }
 });

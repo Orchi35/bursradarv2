@@ -8,12 +8,15 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const root = join(__dir, '..');
 const port = Number(process.env.BOT_SERVER_PORT || 8787);
 const host = process.env.BOT_SERVER_HOST || '127.0.0.1';
+const BOT_TOKEN = process.env.BOT_SERVER_TOKEN;
 let isRunning = false;
+
+const CORS_ORIGIN = process.env.BOT_CORS_ORIGIN || `http://${host}:${port}`;
 
 function sendJson(res, status, body) {
   res.writeHead(status, {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Origin': CORS_ORIGIN,
+    'Access-Control-Allow-Headers': 'authorization, content-type',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Content-Type': 'application/json',
   });
@@ -74,6 +77,13 @@ createServer((req, res) => {
   }
 
   if (req.method === 'POST' && req.url === '/run-bot') {
+    if (BOT_TOKEN) {
+      const auth = req.headers['authorization'] || '';
+      if (auth !== `Bearer ${BOT_TOKEN}`) {
+        sendJson(res, 401, { ok: false, error: 'Yetkisiz.' });
+        return;
+      }
+    }
     runBot(res);
     return;
   }

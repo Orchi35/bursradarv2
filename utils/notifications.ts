@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { getExam, getSchool } from '../data/mock';
 import { Exam } from '../types';
 import { formatLongDate } from './date';
 
@@ -9,11 +8,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 let notificationHandlerReady = false;
 type ExpoNotifications = typeof import('expo-notifications');
 
-export async function scheduleExamReminder(examId: string): Promise<boolean> {
-  const exam = getExam(examId);
-  if (!exam) return false;
-
-  await cancelExamReminder(examId);
+export async function scheduleExamReminder(exam: Exam, schoolName?: string): Promise<boolean> {
+  await cancelExamReminder(exam.id);
 
   if (Platform.OS === 'web') {
     return scheduleWebReminder(exam);
@@ -31,12 +27,11 @@ export async function scheduleExamReminder(examId: string): Promise<boolean> {
   }
 
   const triggerDate = getReminderDate(exam);
-  const school = getSchool(exam.schoolId);
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: 'BursRadar hatırlatma',
-      body: `${school?.name ?? 'Okul'}: ${exam.examName} için tarih yaklaşıyor. Son başvuru: ${formatLongDate(exam.applicationDeadline)}.`,
-      data: { examId },
+      body: `${schoolName ?? 'Okul'}: ${exam.examName} için tarih yaklaşıyor. Son başvuru: ${formatLongDate(exam.applicationDeadline)}.`,
+      data: { examId: exam.id },
       sound: true,
     },
     trigger: {
@@ -46,7 +41,7 @@ export async function scheduleExamReminder(examId: string): Promise<boolean> {
     },
   });
 
-  await AsyncStorage.setItem(storageKey(examId), id);
+  await AsyncStorage.setItem(storageKey(exam.id), id);
   return true;
 }
 
@@ -60,8 +55,12 @@ export async function cancelExamReminder(examId: string) {
   await AsyncStorage.removeItem(key);
 }
 
-export async function syncExamReminders(examIds: string[]) {
-  await Promise.all(examIds.map((id) => scheduleExamReminder(id)));
+export async function syncExamReminders(
+  entries: Array<{ exam: Exam; schoolName?: string }>,
+) {
+  await Promise.all(
+    entries.map(({ exam, schoolName }) => scheduleExamReminder(exam, schoolName)),
+  );
 }
 
 async function getNotifications(): Promise<ExpoNotifications> {

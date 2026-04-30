@@ -62,21 +62,33 @@ Example file: `.env.example`
 
 Required local file: `.env.local`
 
-Required variables:
+### Mobile app (bundled into binary — use `EXPO_PUBLIC_` prefix)
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
 ```
 
-Optional local bot server variables:
+### Bot / server-side (never bundled — no `EXPO_PUBLIC_` prefix)
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+BOT_SERVER_TOKEN=random-secret-for-local-bot-server
+SUPABASE_BOT_SECRET=random-secret-for-edge-function
+```
+
+### Optional local bot server
 
 ```env
 BOT_SERVER_PORT=8787
 BOT_SERVER_HOST=127.0.0.1
 ```
 
-Never commit `.env.local` or service role keys.
+Rules:
+- Never use `EXPO_PUBLIC_` prefix on secret/service keys.
+- Never commit `.env.local`.
+- `SUPABASE_SERVICE_ROLE_KEY` must be set in `.env.local` before running `npm run bot:scrape`.
+- `SUPABASE_BOT_SECRET` must also be registered in Supabase Dashboard → Edge Functions → run-bot → Secrets.
 
 ## Supabase
 
@@ -288,9 +300,55 @@ Files:
 - `scripts/bot-server.mjs`
 - `supabase/functions/run-bot/index.ts`
 
-Security note:
+Key usage:
+
+- `bot.mjs` uses the **anon key** (`EXPO_PUBLIC_SUPABASE_ANON_KEY`) for reads only.
+- Writes (INSERT to `exams`) require the **service role key** (`SUPABASE_SERVICE_ROLE_KEY`).
+- The edge function `run-bot` runs server-side and uses `SUPABASE_SERVICE_ROLE_KEY` from Supabase Secrets.
+- Bot inserts rows with `is_verified=false`. Admin review required before they are shown to users.
+
+Security:
 
 - Local bot server binds to `127.0.0.1` by default.
+- `POST /run-bot` on the local server is protected by `BOT_SERVER_TOKEN` if set.
+- The edge function `run-bot` is protected by `SUPABASE_BOT_SECRET` if set (Bearer token in Authorization header).
+- CORS origin on the local server defaults to `http://{host}:{port}` instead of wildcard.
+
+## Security Model
+
+### Supabase RLS
+
+- `schools` and `exams`: public read-only with anon key. No write policies for anon or authenticated users. Only the service role (Dashboard / edge function) can write.
+- `user_exam_marks`: full RLS. Each user can only read/write/delete their own rows via `auth.uid() = user_id`.
+
+### Key separation
+
+| Key | Bundled in app | Used for |
+|---|---|---|
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | App reads (schools, exams) and auth |
+| `SUPABASE_SERVICE_ROLE_KEY` | Never | Bot writes (server-side only) |
+
+### Auth hardening
+
+- `returnTo` parameter in `app/auth.tsx` is validated to start with `/` to prevent open-redirect attacks.
+- Error messages from Supabase auth are passed through to the user only in the auth screen. Supabase REST errors are not exposed to the UI.
+
+### Notification security
+
+- Only local notifications are used. No remote push tokens are stored in Supabase.
+- Notification IDs are stored in AsyncStorage with a `bursradar:exam-reminder:` prefix.
+
+### Admin panel
+
+- `app/(tabs)/admin.tsx` simply redirects to `/`. There is no admin UI in the mobile app.
+- Admin operations (approving bot-found exams, editing school data) are performed through the Supabase Dashboard with a service role session.
+
+### Manual Supabase steps required for production
+
+1. Register `SUPABASE_BOT_SECRET` in Supabase Dashboard → Project Settings → Edge Functions → Secrets.
+2. Confirm that no INSERT/UPDATE/DELETE policies exist for `schools` and `exams` tables for the `anon` role.
+3. Confirm `user_exam_marks` RLS is enabled (see `supabase/auth_user_exam_marks.sql`).
+4. Optionally, restrict Edge Function invocation to authenticated callers only via Supabase dashboard.
 
 ## Developer Commands
 
@@ -371,6 +429,31 @@ Update the relevant section and add a dated entry to the Change Log. Examples of
 - Security or privacy behavior change.
 
 ## Change Log
+
+### 2026-04-30 (security audit)
+
+- **CRITICAL fix**: `utils/notifications.ts` was importing `getExam`/`getSchool`
+  from `data/mock.ts` — functions that were removed in the data-layer refactor.
+  This caused a runtime crash on any notification operation. Fixed by changing
+  the API: `scheduleExamReminder(examId)` → `scheduleExamReminder(exam, schoolName?)`,
+  `syncExamReminders(ids)` → `syncExamReminders(entries)`. Callers in `AppContext`
+  now look up exam/school via `useData()` before calling notification helpers.
+- **CRITICAL fix**: `supabase/functions/run-bot/index.ts` accepted any anonymous
+  POST request. Added `SUPABASE_BOT_SECRET` Bearer token check — the function
+  returns 401 if the header does not match when the secret is configured.
+  Internal error details no longer leak in the 500 response body.
+- **HIGH fix**: `scripts/bot.mjs` was using the public anon key for INSERT
+  operations, which RLS would silently block. Bot now requires
+  `SUPABASE_SERVICE_ROLE_KEY` for writes. Reads continue to use the anon key.
+  Dry-run mode is allowed without the service key. Hard exit if service key is
+  missing and not in dry-run.
+- **MEDIUM fix**: `scripts/bot-server.mjs` `/run-bot` endpoint had no auth.
+  Added optional `BOT_SERVER_TOKEN` Bearer check. CORS origin changed from
+  wildcard `*` to `http://{host}:{port}` (configurable via `BOT_CORS_ORIGIN`).
+- **MEDIUM fix**: `.env.example` now documents `SUPABASE_SERVICE_ROLE_KEY`,
+  `BOT_SERVER_TOKEN`, and `SUPABASE_BOT_SECRET` with usage notes.
+- Added Security Model section to documentation covering RLS, key separation,
+  auth hardening, notification security, admin panel, and manual Supabase steps.
 
 ### 2026-04-30 (data layer + navigation + auth)
 

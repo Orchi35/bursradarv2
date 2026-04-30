@@ -26,19 +26,27 @@ try {
   }
 } catch { /* .env.local yoksa ortam değişkenleri kullanılır */ }
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// ── Sabitler ──────────────────────────────────────────────────────────────────
+const FETCH_TIMEOUT_MS = 10_000;
+const DRY_RUN          = process.argv.includes('--dry-run');
+const CONCURRENCY      = 3;       // aynı anda kaç okul taransın
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
+const SUPABASE_URL  = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_SVC  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON) {
   console.error('❌  EXPO_PUBLIC_SUPABASE_URL veya EXPO_PUBLIC_SUPABASE_ANON_KEY eksik.');
   console.error('    .env.local dosyasını kontrol et.');
   process.exit(1);
 }
 
-// ── Sabitler ──────────────────────────────────────────────────────────────────
-const FETCH_TIMEOUT_MS = 10_000;
-const DRY_RUN          = process.argv.includes('--dry-run');
-const CONCURRENCY      = 3;       // aynı anda kaç okul taransın
+if (!SUPABASE_SVC && !DRY_RUN) {
+  console.error('❌  SUPABASE_SERVICE_ROLE_KEY eksik.');
+  console.error('    Bu anahtar olmadan veritabanına yazma yapılamaz (RLS engeller).');
+  console.error('    Yalnızca tarama yapmak için: npm run bot:dry-run');
+  process.exit(1);
+}
 
 // ── Türkçe normalleştirme ─────────────────────────────────────────────────────
 function normalize(text) {
@@ -295,16 +303,25 @@ async function fetchPage(url) {
 }
 
 // ── Supabase REST yardımcıları ─────────────────────────────────────────────────
-function headers() {
+function anonHeaders() {
   return {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
+    apikey: SUPABASE_ANON,
+    Authorization: `Bearer ${SUPABASE_ANON}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+function serviceHeaders() {
+  if (!SUPABASE_SVC) throw new Error('SUPABASE_SERVICE_ROLE_KEY eksik.');
+  return {
+    apikey: SUPABASE_SVC,
+    Authorization: `Bearer ${SUPABASE_SVC}`,
     'Content-Type': 'application/json',
   };
 }
 
 async function dbGet(table, query = 'select=*') {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: headers() });
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: anonHeaders() });
   if (!res.ok) throw new Error(`GET ${table} ${res.status}: ${await res.text()}`);
   return res.json();
 }
@@ -313,7 +330,7 @@ async function dbInsertMany(table, rows) {
   if (!rows.length) return;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
     method: 'POST',
-    headers: { ...headers(), Prefer: 'return=minimal' },
+    headers: { ...serviceHeaders(), Prefer: 'return=minimal' },
     body: JSON.stringify(rows),
   });
   if (!res.ok) throw new Error(`INSERT ${table} ${res.status}: ${await res.text()}`);
