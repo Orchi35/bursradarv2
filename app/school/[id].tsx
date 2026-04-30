@@ -7,11 +7,12 @@ import { Screen } from '../../components/Screen';
 import SchoolLogo from '../../components/ui/SchoolLogo';
 import { COLORS, RADIUS } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
-import { getExamsBySchool, getSchool } from '../../data/mock';
+import { useData } from '../../context/DataContext';
 import { formatDate, registrationStatus } from '../../utils/date';
 
 export default function SchoolDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { getSchool, getExamsBySchool } = useData();
   const school = getSchool(id);
   const app = useApp();
 

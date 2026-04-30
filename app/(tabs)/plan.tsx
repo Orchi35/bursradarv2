@@ -7,12 +7,13 @@ import { Header, Screen } from '../../components/Screen';
 import { COLORS, RADIUS } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { EXAMS } from '../../data/mock';
+import { useData } from '../../context/DataContext';
 
 export default function PlanScreen() {
   const app = useApp();
   const auth = useAuth();
-  const planned = EXAMS.filter((exam) => app.isFavorite(exam.id) || app.hasReminder(exam.id));
+  const { exams } = useData();
+  const planned = exams.filter((exam) => app.isFavorite(exam.id) || app.hasReminder(exam.id));
 
   if (auth.loading) {
     return (

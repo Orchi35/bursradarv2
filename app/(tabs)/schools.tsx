@@ -3,15 +3,16 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import SchoolCard from '../../components/SchoolCard';
 import { Header, Screen } from '../../components/Screen';
 import { COLORS, RADIUS } from '../../constants/theme';
-import { SCHOOLS } from '../../data/mock';
+import { useData } from '../../context/DataContext';
 
 export default function SchoolsScreen() {
   const [query, setQuery] = useState('');
-  const schools = useMemo(() => SCHOOLS.filter((school) => {
+  const { schools: allSchools } = useData();
+  const schools = useMemo(() => allSchools.filter((school) => {
     const q = query.toLocaleLowerCase('tr-TR').trim();
     if (!q) return true;
     return `${school.name} ${school.district}`.toLocaleLowerCase('tr-TR').includes(q);
-  }), [query]);
+  }), [query, allSchools]);
 
   return (
     <Screen>

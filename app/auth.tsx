@@ -33,8 +33,12 @@ export default function AuthScreen() {
         await auth.signIn(email, password);
         router.replace(returnTo as any);
       } else {
-        await auth.signUp(email, password);
-        setMessage('Hesap oluşturuldu. Supabase email doğrulaması açıksa gelen kutunu kontrol et; kapalıysa otomatik giriş yapılır.');
+        const { session } = await auth.signUp(email, password);
+        if (session) {
+          router.replace(returnTo as any);
+        } else {
+          setMessage('Hesap oluşturuldu. E-posta doğrulaması gerekiyorsa gelen kutunu kontrol et, sonra giriş yap.');
+        }
       }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Kimlik doğrulama sırasında hata oluştu.');

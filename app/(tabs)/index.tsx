@@ -8,7 +8,7 @@ import { Header, Screen } from '../../components/Screen';
 import { COLORS, RADIUS, SHADOW } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { EXAMS, SCHOOLS } from '../../data/mock';
+import { useData } from '../../context/DataContext';
 
 export default function HomeScreen() {
   if (Platform.OS !== 'web') {
@@ -30,9 +30,10 @@ export default function HomeScreen() {
 function NativeHomeScreen() {
   const app = useApp();
   const auth = useAuth();
-  const featured = EXAMS.filter((exam) => exam.isFeatured && exam.status !== 'closed').slice(0, 2);
-  const openCount = EXAMS.filter((exam) => exam.status === 'open').length;
-  const verifiedCount = SCHOOLS.filter((school) => school.verified).length;
+  const { schools, exams } = useData();
+  const featured = exams.filter((exam) => exam.isFeatured && exam.status !== 'closed').slice(0, 2);
+  const openCount = exams.filter((exam) => exam.status === 'open').length;
+  const verifiedCount = schools.filter((school) => school.verified).length;
 
   return (
     <Screen>
@@ -86,7 +87,7 @@ function NativeHomeScreen() {
       ))}
 
       <Header title="Doğrulanmış okullar" subtitle="Kayıt dönemi ve sınav takibi yapılabilen kurumlar" />
-      {SCHOOLS.filter((school) => school.verified).slice(0, 2).map((school) => (
+      {schools.filter((school) => school.verified).slice(0, 2).map((school) => (
         <SchoolCard key={school.id} school={school} />
       ))}
     </Screen>

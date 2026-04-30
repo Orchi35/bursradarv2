@@ -7,7 +7,8 @@ import { Header, Screen } from '../../components/Screen';
 import SelectSheet from '../../components/ui/SelectSheet';
 import { COLORS, RADIUS } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
-import { EXAMS, GRADES, IZMIR_DISTRICTS } from '../../data/mock';
+import { useData } from '../../context/DataContext';
+import { GRADES, IZMIR_DISTRICTS } from '../../data/mock';
 
 export default function ExamsScreen() {
   const params = useLocalSearchParams<{ district?: string; grade?: string }>();
@@ -16,8 +17,9 @@ export default function ExamsScreen() {
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [sheet, setSheet] = useState<'district' | 'grade' | null>(null);
   const app = useApp();
+  const { exams } = useData();
 
-  const filtered = useMemo(() => EXAMS.filter((exam) => {
+  const filtered = useMemo(() => exams.filter((exam) => {
     if (district !== 'Tümü' && exam.district !== district) return false;
     if (grade !== 'Tümü' && !exam.eligibleGrades.includes(grade)) return false;
     if (onlyOpen && exam.status !== 'open') return false;
@@ -26,7 +28,7 @@ export default function ExamsScreen() {
     if (a.status === 'closed' && b.status !== 'closed') return 1;
     if (b.status === 'closed' && a.status !== 'closed') return -1;
     return new Date(a.examDate).getTime() - new Date(b.examDate).getTime();
-  }), [district, grade, onlyOpen]);
+  }), [district, grade, onlyOpen, exams]);
 
   return (
     <Screen>

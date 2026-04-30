@@ -48,14 +48,3 @@ export const PENDING_UPDATES: PendingUpdate[] = [
   { id: 'p3', schoolName: 'Özel TED İzmir Koleji',  type: 'new_exam',    detected: 'Burs Sınavı 2026',                                   detectedDate: dayOffset(33), source: 'instagram.com/tedizmir', confidence: 0.71, status: 'pending' },
 ];
 
-export function getSchool(id: string): School | undefined {
-  return SCHOOLS.find((s) => s.id === id);
-}
-
-export function getExam(id: string): Exam | undefined {
-  return EXAMS.find((e) => e.id === id);
-}
-
-export function getExamsBySchool(schoolId: string): Exam[] {
-  return EXAMS.filter((e) => e.schoolId === schoolId);
-}

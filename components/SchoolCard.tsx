@@ -3,12 +3,13 @@ import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, RADIUS, SHADOW } from '../constants/theme';
-import { getExamsBySchool } from '../data/mock';
+import { useData } from '../context/DataContext';
 import { School } from '../types';
 import { formatDate, registrationStatus } from '../utils/date';
 import SchoolLogo from './ui/SchoolLogo';
 
 export default function SchoolCard({ school }: { school: School }) {
+  const { getExamsBySchool } = useData();
   const exams = getExamsBySchool(school.id);
   const open = exams.filter((exam) => exam.status === 'open').length;
   const reg = registrationStatus(school);

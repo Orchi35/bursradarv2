@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { AppProvider } from '../context/AppContext';
 import { AuthProvider } from '../context/AuthContext';
+import { DataProvider } from '../context/DataContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -32,16 +33,18 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <AppProvider>
-        <ThemeProvider value={DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="auth" />
-            <Stack.Screen name="school/[id]" />
-            <Stack.Screen name="exam/[id]" />
-          </Stack>
-        </ThemeProvider>
-      </AppProvider>
+      <DataProvider>
+        <AppProvider>
+          <ThemeProvider value={DefaultTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="auth" />
+              <Stack.Screen name="school/[id]" />
+              <Stack.Screen name="exam/[id]" />
+            </Stack>
+          </ThemeProvider>
+        </AppProvider>
+      </DataProvider>
     </AuthProvider>
   );
 }

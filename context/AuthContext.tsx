@@ -8,7 +8,7 @@ interface AuthContextType {
   loading: boolean;
   isConfigured: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ session: Session | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isConfigured: false,
   signIn: async () => {},
-  signUp: async () => {},
+  signUp: async () => ({ session: null }),
   signOut: async () => {},
 });
 
@@ -64,8 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     async signUp(email, password) {
       if (!supabase) throw new Error('Supabase auth yapılandırması eksik.');
-      const { error } = await supabase.auth.signUp({ email: email.trim(), password });
+      const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
       if (error) throw error;
+      return { session: data.session };
     },
     async signOut() {
       if (!supabase) return;

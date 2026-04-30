@@ -9,11 +9,12 @@ import StatusTag from '../../components/ui/StatusTag';
 import VerifyTag from '../../components/ui/VerifyTag';
 import { COLORS, RADIUS, SHADOW } from '../../constants/theme';
 import { useApp } from '../../context/AppContext';
-import { getExam, getSchool } from '../../data/mock';
+import { useData } from '../../context/DataContext';
 import { daysUntilLabel, formatLongDate } from '../../utils/date';
 
 export default function ExamDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { getExam, getSchool } = useData();
   const exam = getExam(id);
   const app = useApp();
 

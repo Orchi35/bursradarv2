@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, RADIUS, SHADOW } from '../constants/theme';
-import { getSchool } from '../data/mock';
+import { useData } from '../context/DataContext';
 import { Exam } from '../types';
 import { daysUntilLabel, formatDate, urgency } from '../utils/date';
 import SchoolLogo from './ui/SchoolLogo';
@@ -21,6 +21,7 @@ interface Props {
 }
 
 export default function ExamCard({ exam, compact, favorite, reminder, onToggleFavorite, onToggleReminder }: Props) {
+  const { getSchool } = useData();
   const school = getSchool(exam.schoolId);
   const closed = exam.status === 'closed';
   const deadlineUrgency = urgency(exam.applicationDeadline);

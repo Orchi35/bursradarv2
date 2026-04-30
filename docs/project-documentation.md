@@ -44,7 +44,9 @@ Important: the Android package id cannot be changed after the first Google Play 
 - `components/`: Shared UI cards and layout components.
 - `context/AuthContext.tsx`: Supabase auth session state and auth actions.
 - `context/AppContext.tsx`: Favorites/reminders state, Supabase persistence, notification scheduling.
-- `data/mock.ts`: Current mock school/exam data.
+- `context/DataContext.tsx`: Schools/exams data state. Fetches from Supabase if configured, falls back to mock data.
+- `services/dataService.ts`: Supabase row → app type mapping and combined fetch helper.
+- `data/mock.ts`: Mock school/exam data used as fallback and offline reference.
 - `utils/supabaseClient.ts`: Supabase client and REST helper.
 - `utils/notifications.ts`: Local notification scheduling/cancel helpers.
 - `utils/date.ts`: Date formatting and date status helpers.
@@ -126,11 +128,49 @@ Columns:
 2. If not logged in, app shows a protected-state card and CTA.
 3. CTA routes to `/auth?returnTo=/plan`.
 4. User signs in or signs up.
-5. On success, app returns to `/plan`.
-6. Favorites/reminders load from Supabase.
-7. User can sign out from `Planım`.
+5. On sign-in success, app returns to `returnTo`.
+6. On sign-up success, app returns to `returnTo` if a session was created
+   (email confirmation disabled). If email confirmation is enabled, a
+   message is shown asking the user to verify the email and sign in.
+7. Favorites/reminders load from Supabase.
+8. User can sign out from `Planım`.
 
 Tested with a manually created Supabase Auth user.
+
+## Data Layer
+
+Implemented in:
+
+- `services/dataService.ts`
+- `context/DataContext.tsx`
+- `data/mock.ts`
+
+Behavior:
+
+- On app start the `DataProvider` initializes state with mock data so the
+  UI renders instantly.
+- It then attempts to fetch `schools` and `exams` from Supabase via
+  `selectRows`. Supabase column names are mapped to the TypeScript types
+  declared in `types/index.ts` (e.g. `is_verified` → `verified`,
+  `applicable_grades` → `eligibleGrades`, `scholarship_rate` →
+  `scholarshipScore`, `registration_end_date` → `registrationDeadline`,
+  `about_text` → `description`, etc.).
+- Exam status (`open`/`upcoming`/`closed`) is derived from the application
+  start/deadline dates, since the schema does not store a status column.
+- If Supabase is not configured, returns no rows, or fails for any reason,
+  the provider falls back to mock data. The active source is exposed as
+  `source: 'supabase' | 'mock'` for diagnostics.
+- All screens and shared cards read schools/exams via `useData()`. Mock
+  imports are limited to the static UI lists (`GRADES`, `IZMIR_DISTRICTS`).
+
+## Navigation
+
+- Tab navigation is implemented in `app/(tabs)/_layout.tsx`.
+- Native (iOS/Android): visible bottom tab bar with FontAwesome icons for
+  Ana Sayfa, Sınavlar, Okullar, Planım. The `admin` tab is hidden via
+  `{ href: null }`.
+- Web: tab bar is hidden (`tabBarStyle: { display: 'none' }`) because
+  the home screen renders the `BursRadar.html` prototype as an iframe.
 
 ## Favorites And Reminders
 
@@ -331,6 +371,28 @@ Update the relevant section and add a dated entry to the Change Log. Examples of
 - Security or privacy behavior change.
 
 ## Change Log
+
+### 2026-04-30 (data layer + navigation + auth)
+
+- Added `services/dataService.ts` and `context/DataContext.tsx` to fetch
+  schools/exams from Supabase at runtime, with mock data as a graceful
+  fallback. Column names from `schema.sql` are mapped to the existing
+  TypeScript types so screens did not need to change shape.
+- Wired `DataProvider` into `app/_layout.tsx`. All screens and shared
+  cards (`ExamCard`, `SchoolCard`, exam/school detail screens, exams list,
+  schools list, plan, home) now read data through `useData()` instead of
+  importing arrays from `data/mock.ts`. Mock imports are limited to
+  `GRADES` and `IZMIR_DISTRICTS` static UI lists. The unused `getSchool`,
+  `getExam`, `getExamsBySchool` helpers were removed from `data/mock.ts`.
+- Bottom tab navigation enabled on native: `app/(tabs)/_layout.tsx` now
+  shows a tab bar with FontAwesome icons for Ana Sayfa, Sınavlar, Okullar,
+  Planım. The `admin` route is hidden from the tab bar. Web continues to
+  hide the tab bar to preserve the iframe home prototype.
+- `AuthContext.signUp` now returns `{ session }`. `app/auth.tsx` redirects
+  to `returnTo` when sign-up returns an active session (email confirmation
+  disabled), and otherwise asks the user to verify their email.
+- Removed orphan test `components/__tests__/StyledText-test.js` referring
+  to a deleted component.
 
 ### 2026-04-30 (refactor)
 
