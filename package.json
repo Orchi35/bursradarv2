@@ -6,7 +6,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "bot:scrape": "node scripts/bot.mjs",
+    "bot:dry-run": "node scripts/bot.mjs --dry-run",
+    "bot:server": "node scripts/bot-server.mjs",
+    "bot": "npm run bot:scrape"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

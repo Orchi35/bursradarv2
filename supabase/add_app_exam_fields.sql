@@ -1,0 +1,2 @@
+-- Bu dosya artık kullanılmıyor.
+-- Tüm alanlar schema.sql içinde tanımlıdır.

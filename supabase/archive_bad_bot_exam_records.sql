@@ -1,0 +1,2 @@
+-- Bu dosya artık kullanılmıyor.
+-- Bot kaldırıldı; tüm veriler manuel olarak Supabase üzerinden girilmektedir.

@@ -1,14 +1,25 @@
-import { StyleSheet } from 'react-native';
+import React from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function BursRadarDesignScreen() {
+  if (Platform.OS !== 'web') {
+    return (
+      <View style={styles.fallback}>
+        <Text style={styles.fallbackText}>
+          BursRadar tasarım prototipi web görünümünde birebir çalışır.
+        </Text>
+      </View>
+    );
+  }
 
-export default function TabOneScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      {React.createElement('iframe', {
+        src: '/bursradar/BursRadar.html',
+        title: 'BursRadar',
+        style: styles.iframe,
+        frameBorder: 0,
+      })}
     </View>
   );
 }
@@ -16,16 +27,25 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#1f2937',
+  },
+  iframe: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 0,
+    borderStyle: 'none',
+  } as any,
+  fallback: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#F8FAFC',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  fallbackText: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
