@@ -48,6 +48,7 @@ Important: the Android package id cannot be changed after the first Google Play 
 - `utils/supabaseClient.ts`: Supabase client and REST helper.
 - `utils/notifications.ts`: Local notification scheduling/cancel helpers.
 - `utils/date.ts`: Date formatting and date status helpers.
+- `utils/format.ts`: String formatting helpers (school initials, etc.).
 - `scripts/`: Bot and local bot server scripts.
 - `supabase/`: SQL schema, seed files, edge function, migrations.
 - `docs/`: Project documentation and release notes.
@@ -330,6 +331,31 @@ Update the relevant section and add a dated entry to the Change Log. Examples of
 - Security or privacy behavior change.
 
 ## Change Log
+
+### 2026-04-30 (refactor)
+
+- Removed unused Expo template files: `app/modal.tsx`, `components/EditScreenInfo.tsx`,
+  `components/StyledText.tsx`, `components/Themed.tsx`, `components/ExternalLink.tsx`,
+  `components/useColorScheme.ts(.web.ts)`, `components/useClientOnlyValue.ts(.web.ts)`,
+  `constants/Colors.ts`. None of these were used by the production app and they
+  produced TypeScript alias errors.
+- Rewrote `app/+not-found.tsx` to depend on the project's own theme system
+  (`constants/theme.ts`) instead of the deleted `Themed.tsx`. Localized to Turkish.
+- `context/AppContext.tsx`: wrapped `toggleFavorite` and `toggleReminder` in
+  `useCallback`, and the Provider value in `useMemo`, to avoid unnecessary
+  re-renders of `ExamCard` and `SchoolCard` consumers.
+- `utils/notifications.ts`: `syncExamReminders` now schedules reminders in
+  parallel via `Promise.all` instead of a sequential `for` loop.
+- `components/ui/SelectSheet.tsx`: replaced raw `x` close button with the
+  FontAwesome `times` icon and added `accessibilityLabel`.
+- `app/exam/[id].tsx`: extended `sourceLabel` to support all bot source types
+  (instagram, facebook, twitter, phone, email, manual) instead of falling back
+  to the raw key.
+- Moved `schoolInitials` from `utils/date.ts` to a new `utils/format.ts`.
+  Updated `components/ui/SchoolLogo.tsx` import accordingly. `utils/date.ts`
+  now contains only date helpers.
+- Renamed the home component `BursRadarDesignScreen` to `HomeScreen` in
+  `app/(tabs)/index.tsx` for clarity.
 
 ### 2026-04-30
 
