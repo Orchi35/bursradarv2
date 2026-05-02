@@ -1,8 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useAuth } from './AuthContext';
-import { useData } from './DataContext';
 import { supabase } from '../utils/supabaseClient';
-import { cancelExamReminder, scheduleExamReminder, syncExamReminders } from '../utils/notifications';
+import { useAuth } from './AuthContext';
 
 interface AppContextType {
   favorites: string[];
@@ -24,7 +22,6 @@ const AppContext = createContext<AppContextType>({
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
-  const { getExam, getSchool } = useData();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [reminders, setReminders] = useState<string[]>([]);
 
@@ -45,24 +42,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (!mounted) return;
       if (error) {
-        console.warn('[AppContext] Plan yüklenemedi.', error);
+        console.warn('[AppContext] Plan yuklenemedi.', error);
         return;
       }
 
-      const nextFavorites = (data ?? []).filter((row) => row.is_favorite).map((row) => row.exam_id);
-      const nextReminders = (data ?? []).filter((row) => row.has_reminder).map((row) => row.exam_id);
-      setFavorites(nextFavorites);
-      setReminders(nextReminders);
-
-      const reminderEntries = nextReminders.flatMap((id) => {
-        const exam = getExam(id);
-        if (!exam) return [];
-        const school = getSchool(exam.schoolId);
-        return [{ exam, schoolName: school?.name }];
-      });
-      syncExamReminders(reminderEntries).catch((err) => {
-        console.warn('[AppContext] Hatırlatmalar senkronize edilemedi.', err);
-      });
+      setFavorites((data ?? []).filter((row) => row.is_favorite).map((row) => row.exam_id));
+      setReminders((data ?? []).filter((row) => row.has_reminder).map((row) => row.exam_id));
     }
 
     loadUserPlan();
@@ -70,7 +55,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [auth.user, getExam, getSchool]);
+  }, [auth.user]);
 
   const persistMark = useCallback(async (examId: string, partial: { is_favorite?: boolean; has_reminder?: boolean }) => {
     if (!auth.user || !supabase) return;
@@ -95,7 +80,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .delete()
         .eq('user_id', auth.user.id)
         .eq('exam_id', examId);
-      if (error) console.warn('[AppContext] Plan satırı silinemedi.', error);
+      if (error) console.warn('[AppContext] Plan satiri silinemedi.', error);
       return;
     }
 
@@ -117,21 +102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
     persistMark(id, { has_reminder: next });
-
-    const exam = getExam(id);
-    if (next && exam) {
-      const school = getSchool(exam.schoolId);
-      scheduleExamReminder(exam, school?.name).then((scheduled) => {
-        if (!scheduled) {
-          console.warn('[AppContext] Bildirim izni verilmedi veya bu platformda desteklenmiyor.');
-        }
-      });
-    } else {
-      cancelExamReminder(id).catch((err) => {
-        console.warn('[AppContext] Hatırlatma iptal edilemedi.', err);
-      });
-    }
-  }, [reminders, persistMark, getExam, getSchool]);
+  }, [reminders, persistMark]);
 
   const value = useMemo(() => ({
     favorites,

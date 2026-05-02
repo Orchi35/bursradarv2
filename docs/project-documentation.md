@@ -84,8 +84,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 BOT_SERVER_TOKEN=random-secret-for-local-bot-server
 SUPABASE_BOT_SECRET=random-secret-for-edge-function
 RESEND_API_KEY=your-resend-api-key
-PACKAGE_REQUEST_MAIL_TO=orcun@bursradar.info
-PACKAGE_REQUEST_MAIL_FROM=BursRadar <noreply@bursradar.info>
+PACKAGE_REQUEST_MAIL_TO=orcun@bursradar.app
+PACKAGE_REQUEST_MAIL_FROM=BursRadar <noreply@bursradar.app>
 ```
 
 ### Optional local bot server
@@ -103,6 +103,12 @@ Rules:
 - `RESEND_API_KEY`, `PACKAGE_REQUEST_MAIL_TO`, and `PACKAGE_REQUEST_MAIL_FROM` must be registered in Supabase Dashboard → Edge Functions → package-request-notify → Secrets before package request email notifications can be sent.
 
 ## Supabase
+
+### Auth email templates
+
+Supabase Auth confirmation email should use the branded Turkish template in
+`docs/supabase-auth-email-templates.md`. The confirmation link must keep
+Supabase's `{{ .ConfirmationURL }}` variable so email verification continues to work.
 
 The app uses Supabase for authentication and user-specific plan data.
 

@@ -261,19 +261,42 @@
     return data?.session || null;
   }
 
+  async function resendSignupConfirmation(email) {
+    const trimmed = (email || '').trim();
+    if (!trimmed) throw new Error('E-posta adresi gerekli.');
+    const redirectTo = window.ReactNativeWebView != null
+      ? window.BURSRADAR_AUTH_REDIRECT_TO
+      : `${window.location.origin}/?auth=signup`;
+    const { error } = await sb.auth.resend({
+      type: 'signup',
+      email: trimmed,
+      options: { emailRedirectTo: redirectTo },
+    });
+    if (error) throw error;
+  }
+
   async function signOut() {
     const { error } = await sb.auth.signOut();
     if (error) throw error;
   }
 
-  function signInWithGoogle() {
+  async function signInWithGoogle() {
     const isNative = window.ReactNativeWebView != null;
-    if (isNative) {
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'oauth', provider: 'google' }));
+    const redirectTo = isNative
+      ? window.BURSRADAR_AUTH_REDIRECT_TO
+      : `${window.location.origin}/?auth=google`;
+    const { data, error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        skipBrowserRedirect: isNative,
+      },
+    });
+    if (error) throw error;
+    if (isNative && data?.url) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'oauth', url: data.url }));
       return;
     }
-    const redirectTo = `${window.location.origin}/?auth=google`;
-    sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
   }
 
   async function resetPassword(email) {
@@ -657,6 +680,7 @@
     getSession,
     signIn,
     signUp,
+    resendSignupConfirmation,
     signOut,
     signInWithGoogle,
     resetPassword,

@@ -1851,7 +1851,9 @@ function AccountScreen({ go, params, auth }) {
   const [password, setPassword] = useS('');
   const [passwordConfirm, setPasswordConfirm] = useS('');
   const [submitting, setSubmitting] = useS(false);
+  const [resending, setResending] = useS(false);
   const [message, setMessage] = useS('');
+  const [confirmationEmail, setConfirmationEmail] = useS('');
   const returnTo = params?.returnTo || 'plan';
   const canOpenOwnSchool = auth.profile?.role === 'school_user' && !!auth.profile?.school_id;
 
@@ -1883,7 +1885,10 @@ function AccountScreen({ go, params, auth }) {
       } else if (mode === 'register') {
         const session = await auth.signUp(email, password);
         if (session?.user) go(returnTo);
-        else setMessage('Kayıt alındı. E-posta doğrulaması gerekiyorsa gelen kutunuzu kontrol edin.');
+        else {
+          setConfirmationEmail(email.trim());
+          setMessage('Doğrulama bağlantısı e-posta adresinize gönderildi. Hesabınızı etkinleştirmek için gelen kutunuzu kontrol edin.');
+        }
       } else {
         await auth.resetPassword(email);
         setMessage('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.');
@@ -1892,6 +1897,25 @@ function AccountScreen({ go, params, auth }) {
       setMessage(err?.message || 'İşlem tamamlanamadı. Lütfen bilgilerinizi kontrol edin.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    const targetEmail = confirmationEmail || email.trim();
+    if (!targetEmail) {
+      setMessage('Doğrulama bağlantısını tekrar göndermek için e-posta adresinizi yazın.');
+      return;
+    }
+    setResending(true);
+    setMessage('');
+    try {
+      await auth.resendSignupConfirmation(targetEmail);
+      setConfirmationEmail(targetEmail);
+      setMessage('Doğrulama bağlantısı tekrar gönderildi. Gelen kutunuzu ve spam klasörünüzü kontrol edin.');
+    } catch (err) {
+      setMessage(err?.message || 'Doğrulama bağlantısı tekrar gönderilemedi. Lütfen biraz sonra deneyin.');
+    } finally {
+      setResending(false);
     }
   }
 
@@ -1994,14 +2018,20 @@ function AccountScreen({ go, params, auth }) {
 
         {message && <div className="auth-message">{message}</div>}
 
+        {mode === 'register' && confirmationEmail && (
+          <button type="button" className="auth-secondary" onClick={resendConfirmation} disabled={resending}>
+            {resending ? 'Tekrar gönderiliyor...' : 'Doğrulama mailini tekrar gönder'}
+          </button>
+        )}
+
         <button className="auth-primary" disabled={submitting}>
           {submitting ? 'İşleniyor...' : mode === 'forgot' ? 'Bağlantı gönder' : title}
         </button>
 
         <div className="auth-links">
-          {mode !== 'login' && <button type="button" onClick={() => { setMode('login'); setMessage(''); setPasswordConfirm(''); }}>Giriş yap</button>}
-          {mode !== 'register' && <button type="button" onClick={() => { setMode('register'); setMessage(''); setPasswordConfirm(''); }}>Hesap oluştur</button>}
-          {mode !== 'forgot' && <button type="button" onClick={() => { setMode('forgot'); setMessage(''); setPasswordConfirm(''); }}>Şifremi unuttum</button>}
+          {mode !== 'login' && <button type="button" onClick={() => { setMode('login'); setMessage(''); setPasswordConfirm(''); setConfirmationEmail(''); }}>Giriş yap</button>}
+          {mode !== 'register' && <button type="button" onClick={() => { setMode('register'); setMessage(''); setPasswordConfirm(''); setConfirmationEmail(''); }}>Hesap oluştur</button>}
+          {mode !== 'forgot' && <button type="button" onClick={() => { setMode('forgot'); setMessage(''); setPasswordConfirm(''); setConfirmationEmail(''); }}>Şifremi unuttum</button>}
         </div>
       </form>
     </div>

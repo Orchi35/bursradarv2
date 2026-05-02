@@ -3,8 +3,8 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const MAIL_TO = Deno.env.get("PACKAGE_REQUEST_MAIL_TO") || "orcun@bursradar.info";
-const MAIL_FROM = Deno.env.get("PACKAGE_REQUEST_MAIL_FROM") || "BursRadar <noreply@bursradar.info>";
+const MAIL_TO = Deno.env.get("PACKAGE_REQUEST_MAIL_TO") || "orcun@bursradar.app";
+const MAIL_FROM = Deno.env.get("PACKAGE_REQUEST_MAIL_FROM") || "BursRadar <noreply@bursradar.app>";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

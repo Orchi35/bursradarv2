@@ -9,6 +9,7 @@ interface AuthContextType {
   isConfigured: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<{ session: Session | null }>;
+  resendSignupConfirmation: (email: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   isConfigured: false,
   signIn: async () => {},
   signUp: async () => ({ session: null }),
+  resendSignupConfirmation: async () => {},
   resetPassword: async () => {},
   signOut: async () => {},
 });
@@ -69,6 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
       if (error) throw error;
       return { session: data.session };
+    },
+    async resendSignupConfirmation(email) {
+      if (!supabase) throw new Error('Supabase auth yapilandirmasi eksik.');
+      const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+      if (error) throw error;
     },
     async resetPassword(email) {
       if (!supabase) throw new Error('Supabase auth yapÄ±landÄ±rmasÄ± eksik.');
