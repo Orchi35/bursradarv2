@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ExamCard from '../../components/ExamCard';
 import { Screen } from '../../components/Screen';
 import SchoolLogo from '../../components/ui/SchoolLogo';
@@ -81,30 +81,47 @@ export default function SchoolDetailScreen() {
   );
 }
 
+const SAFE_PROTOCOLS = /^(https?:\/\/|mailto:|tel:|maps:)/i;
+
+function validateAndNormalize(url: string): string | null {
+  const trimmed = url.trim();
+  if (!SAFE_PROTOCOLS.test(trimmed)) return null;
+  return trimmed;
+}
+
+function normalizeWebsiteUrl(url: string): string {
+  const trimmed = url.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function normalizeInstagramUrl(handle: string): string {
+  const trimmed = handle.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://www.instagram.com/${trimmed.replace(/^@/, '')}`;
+}
+
 function ContactLink({ icon, label, url }: { icon: React.ComponentProps<typeof FontAwesome>['name']; label: string; url: string }) {
   async function openLink() {
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
+    const safe = validateAndNormalize(url);
+    if (!safe) {
+      Alert.alert('Geçersiz Link', 'Bu link güvenli bir protokol içermiyor.');
+      return;
     }
+    const supported = await Linking.canOpenURL(safe);
+    if (!supported) {
+      Alert.alert('Link Açılamadı', 'Bu link cihazınızda desteklenmiyor.');
+      return;
+    }
+    await Linking.openURL(safe);
   }
 
   return (
     <TouchableOpacity accessibilityRole="link" style={styles.contactLink} onPress={openLink}>
       <FontAwesome name={icon} color={COLORS.primaryMid} size={15} />
       <Text style={styles.contactText}>{label}</Text>
-      <FontAwesome name="external-link" color={COLORS.textMuted} size={12} />
+      <FontAwesome name="external-link" color={COLORS.primaryMid} size={11} />
     </TouchableOpacity>
   );
-}
-
-function normalizeWebsiteUrl(url: string) {
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
-
-function normalizeInstagramUrl(handle: string) {
-  if (/^https?:\/\//i.test(handle)) return handle;
-  return `https://www.instagram.com/${handle.replace(/^@/, '')}`;
 }
 
 const styles = StyleSheet.create({
@@ -121,7 +138,7 @@ const styles = StyleSheet.create({
   infoText: { color: COLORS.textSecondary, marginTop: 4 },
   contact: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 10, gap: 6, marginTop: 14, borderWidth: 1, borderColor: COLORS.borderLight },
   contactLink: { flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: RADIUS.md, paddingHorizontal: 8, paddingVertical: 9 },
-  contactText: { color: COLORS.textPrimary, fontWeight: '700', flex: 1 },
+  contactText: { color: COLORS.primaryMid, fontWeight: '600', flex: 1, textDecorationLine: 'underline' },
   sectionTitle: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', marginTop: 22, marginBottom: 12 },
   empty: { color: COLORS.textSecondary, textAlign: 'center', fontWeight: '700', paddingVertical: 20 },
 });

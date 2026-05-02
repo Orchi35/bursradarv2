@@ -16,6 +16,13 @@ function ScoreBadge({ score }) {
 function SchoolLogo({ school, size }) {
   const initials = window.schoolInitials(school.name);
   const w = size || 42;
+  if (school.profileImageUrl) {
+    return (
+      <div className="school-logo school-logo-image" style={{ width: w, height: w }}>
+        <img src={school.profileImageUrl} alt="" />
+      </div>
+    );
+  }
   return (
     <div className="school-logo" style={{
       width: w, height: w,
@@ -28,9 +35,12 @@ function SchoolLogo({ school, size }) {
 
 function VerifyTag({ status, size }) {
   const map = {
-    verified: { label: 'Doğrulandı', cls: 'verified' },
-    pending: { label: 'Kontrol Bekliyor', cls: 'pending' },
+    verified: { label: 'Resmi doğrulandı', cls: 'verified' },
+    official_verified: { label: 'Resmi doğrulandı', cls: 'verified' },
+    pending: { label: 'Kontrol bekliyor', cls: 'pending' },
+    pending_review: { label: 'Kontrol bekliyor', cls: 'pending' },
     outdated: { label: 'Eski Olabilir', cls: 'outdated' },
+    possibly_outdated: { label: 'Eski Olabilir', cls: 'outdated' },
   };
   const m = map[status] || map.verified;
   return (
@@ -54,6 +64,7 @@ function ExamCard({ exam, compact, onOpen, fav, rem, onFav, onRem }) {
   const school = window.getSchool(exam.schoolId);
   const isClosed = exam.status === 'closed';
   const urg = window.urgency(exam.applicationDeadline);
+  const schoolFeatured = !!school?.isPremium;
 
   return (
     <div className={'exam-card ' + (compact ? 'compact ' : '') + (isClosed ? 'closed' : '')}
@@ -104,6 +115,7 @@ function ExamCard({ exam, compact, onOpen, fav, rem, onFav, onRem }) {
       </div>
 
       <div className="tag-row">
+        {schoolFeatured && <span className="featured-tag"><Icon name="star" /> Öne Çıkan Okul</span>}
         <StatusTag status={exam.status} />
         <VerifyTag status={exam.verificationStatus} />
       </div>
@@ -127,14 +139,22 @@ function ExamCard({ exam, compact, onOpen, fav, rem, onFav, onRem }) {
   );
 }
 
-function SchoolCard({ school, onOpen }) {
+function SchoolCard({ school, onOpen, variant }) {
   const exams = window.getExamsBySchool(school.id);
   const open = exams.filter(e => e.status === 'open').length;
   const reg = window.registrationStatus && window.registrationStatus(school);
+  const schoolFeatured = !!school?.isPremium;
+  const cardVariant = variant || (schoolFeatured ? 'featured' : 'standard');
+  const schoolThemeColor = school.heroColor || school.logoColor;
   return (
-    <div className="school-card" onClick={() => onOpen && onOpen(school.id)}>
+    <div
+      className={'school-card ' + (cardVariant === 'featured' ? 'featured' : '')}
+      style={cardVariant === 'featured' ? { '--school-theme': schoolThemeColor } : undefined}
+      onClick={() => onOpen && onOpen(school.id)}
+    >
+      {schoolFeatured && <div className="featured-tag school-featured-top"><Icon name="star" /> Öne Çıkan Okul</div>}
       <div className="head">
-        <SchoolLogo school={school} size={46} />
+        <SchoolLogo school={school} size={schoolFeatured ? 54 : 46} />
         <div className="info">
           <div className="name">{school.name}</div>
           <div className="meta">
@@ -145,6 +165,7 @@ function SchoolCard({ school, onOpen }) {
           <div className="verified-tick"><Icon name="check" /></div>
         )}
       </div>
+      {schoolFeatured && <div className="featured-tag school-featured"><Icon name="star" /> Öne Çıkan Okul</div>}
       {school.description && <div className="desc">{school.description}</div>}
       {reg && school.registrationDeadline && (
         <div className={'reg-pill reg-' + reg.state}>

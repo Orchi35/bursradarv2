@@ -1,10 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
 import { COLORS } from '../../constants/theme';
-
-const isWeb = Platform.OS === 'web';
 
 export default function TabLayout() {
   return (
@@ -13,15 +10,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: COLORS.primaryMid,
         tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarStyle: isWeb
-          ? { display: 'none' }
-          : {
-              backgroundColor: COLORS.surface,
-              borderTopColor: COLORS.borderLight,
-              height: 60,
-              paddingBottom: 8,
-              paddingTop: 6,
-            },
+        tabBarStyle: { display: 'none' },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
       }}
     >
@@ -51,6 +40,13 @@ export default function TabLayout() {
         options={{
           title: 'Planım',
           tabBarIcon: ({ color, size }) => <FontAwesome name="bookmark" size={size - 2} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="account"
+        options={{
+          title: 'Hesap',
+          tabBarIcon: ({ color, size }) => <FontAwesome name="user" size={size - 2} color={color} />,
         }}
       />
       <Tabs.Screen name="admin" options={{ href: null }} />

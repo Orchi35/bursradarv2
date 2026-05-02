@@ -7,20 +7,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=7" />
+<link rel="stylesheet" href="styles.css?v=18" />
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
 
 <script src="data.js?v=3"></script>
-<script src="supabase-client.js?v=4"></script>
-<script type="text/babel" src="icons.jsx?v=3"></script>
+<script src="supabase-client.js?v=21"></script>
+<script type="text/babel" src="icons.jsx?v=4"></script>
 <script type="text/babel" src="tweaks-panel.jsx?v=3"></script>
-<script type="text/babel" src="components.jsx?v=3"></script>
-<script type="text/babel" src="screens.jsx?v=8"></script>
+<script type="text/babel" src="components.jsx?v=7"></script>
+<script type="text/babel" src="screens.jsx?v=30"></script>
 
 <script type="text/babel">
 const { useState, useEffect } = React;
@@ -38,10 +39,43 @@ function App() {
   const [fav, setFav] = useState(['e2', 'e4']);
   const [rem, setRem] = useState(['e1', 'e3']);
   const [toast, setToast] = useState(null);
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [realtimeVersion, setRealtimeVersion] = useState(0);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tweaks.theme === 'dark' ? 'dark' : 'light');
   }, [tweaks.theme]);
+
+  useEffect(() => {
+    let mounted = true;
+    window.BursRadarSupabase.getSession()
+      .then(nextSession => { if (mounted) setSession(nextSession); })
+      .finally(() => { if (mounted) setAuthLoading(false); });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!session?.access_token) {
+      setProfile(null);
+      setProfileLoading(false);
+      return () => { mounted = false; };
+    }
+
+    setProfileLoading(true);
+    window.BursRadarSupabase.getCurrentUserProfile(session)
+      .then(nextProfile => { if (mounted) setProfile(nextProfile); })
+      .catch(err => {
+        console.warn('[BursRadar] Kullanıcı rol profili yüklenemedi.', err.message);
+        if (mounted) setProfile(null);
+      })
+      .finally(() => { if (mounted) setProfileLoading(false); });
+
+    return () => { mounted = false; };
+  }, [session?.access_token]);
 
   function syncPlanDefaults() {
     const ids = window.EXAMS.map(e => e.id);
@@ -62,27 +96,120 @@ function App() {
     return () => window.removeEventListener('bursradar:data-ready', handleDataReady);
   }, []);
 
+  useEffect(() => {
+    if (!window.BursRadarSupabase?.startRealtime) return undefined;
+    return window.BursRadarSupabase.startRealtime({
+      session,
+      profile,
+      onPublicDataChange: payload => {
+        setDataVersion(v => v + 1);
+        setRealtimeVersion(v => v + 1);
+        showToast(payload?.table === 'exams' ? 'Sınav bilgileri güncellendi' : 'Okul bilgileri güncellendi');
+      },
+      onPrivateDataChange: () => {
+        setRealtimeVersion(v => v + 1);
+        syncPlanMarks(session);
+      },
+      onProfileChange: () => {
+        if (!session?.access_token) return;
+        window.BursRadarSupabase.getCurrentUserProfile(session)
+          .then(nextProfile => {
+            setProfile(nextProfile);
+            setRealtimeVersion(v => v + 1);
+            showToast('Hesap yetkileri güncellendi');
+          })
+          .catch(err => console.warn('[BursRadar] Realtime rol yenileme hatası.', err.message));
+      },
+    });
+  }, [session?.access_token, session?.user?.id, profile?.role, profile?.school_id]);
+
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(null), 2000);
   }
 
+  async function syncPlanMarks(nextSession = session) {
+    if (!nextSession?.access_token) return;
+    try {
+      const rows = await window.BursRadarSupabase.getUserExamMarks(nextSession);
+      setFav(rows.filter(row => row.is_favorite).map(row => row.exam_id));
+      setRem(rows.filter(row => row.has_reminder).map(row => row.exam_id));
+    } catch (err) {
+      console.warn('[BursRadar] Plan işaretleri yüklenemedi.', err.message);
+    }
+  }
+
+  useEffect(() => {
+    syncPlanMarks(session);
+  }, [session?.access_token, dataVersion]);
+
   function toggleFav(id) {
     setFav(f => {
       const has = f.includes(id);
+      const next = has ? f.filter(x => x !== id) : [...f, id];
       showToast(has ? 'Favorilerden \u00e7\u0131kar\u0131ld\u0131' : 'Favorilere eklendi');
-      return has ? f.filter(x => x !== id) : [...f, id];
+      if (session?.access_token) {
+        window.BursRadarSupabase.setUserExamMark(id, {
+          isFavorite: !has,
+          hasReminder: rem.includes(id),
+        }, session).catch(err => console.warn('[BursRadar] Favori kaydedilemedi.', err.message));
+      }
+      return next;
     });
   }
   function toggleRem(id) {
     setRem(r => {
       const has = r.includes(id);
+      const next = has ? r.filter(x => x !== id) : [...r, id];
       showToast(has ? 'Hat\u0131rlatma kald\u0131r\u0131ld\u0131' : 'Hat\u0131rlatma kuruldu');
-      return has ? r.filter(x => x !== id) : [...r, id];
+      if (session?.access_token) {
+        window.BursRadarSupabase.setUserExamMark(id, {
+          isFavorite: fav.includes(id),
+          hasReminder: !has,
+        }, session).catch(err => console.warn('[BursRadar] Hatırlatma kaydedilemedi.', err.message));
+      }
+      return next;
     });
   }
 
+  async function signIn(email, password) {
+    const nextSession = await window.BursRadarSupabase.signIn(email, password);
+    setSession(nextSession);
+    showToast('Oturum açıldı');
+    return nextSession;
+  }
+
+  function signInWithGoogle() {
+    window.BursRadarSupabase.signInWithGoogle();
+  }
+
+  async function signUp(email, password) {
+    const nextSession = await window.BursRadarSupabase.signUp(email, password);
+    setSession(nextSession);
+    showToast(nextSession?.user ? 'Hesap oluşturuldu' : 'Kayıt isteği alındı');
+    return nextSession;
+  }
+
+  async function resetPassword(email) {
+    await window.BursRadarSupabase.resetPassword(email);
+    showToast('Şifre sıfırlama e-postası gönderildi');
+  }
+
+  async function signOut() {
+    await window.BursRadarSupabase.signOut();
+    setSession(null);
+    setProfile(null);
+    setFav([]);
+    setRem([]);
+    showToast('Oturum kapatıldı');
+    setRoute({ tab: 'account', overlay: null, params: null });
+  }
+
   function go(target, params) {
+    if (target === 'plan' && !session?.user) {
+      setRoute({ tab: 'account', overlay: null, params: { returnTo: 'plan' } });
+      return;
+    }
     if (target === 'exam' || target === 'school') {
       setRoute(r => ({ ...r, overlay: target, params }));
       // scroll to top
@@ -99,7 +226,44 @@ function App() {
     }
   }
 
-  const screenProps = { go, fav, rem, toggleFav, toggleRem };
+  const auth = {
+    user: session?.user || null,
+    profile,
+    profileLoading,
+    loading: authLoading,
+    signIn,
+    signInWithGoogle,
+    signUp,
+    resetPassword,
+    signOut,
+    getUserExamMarks: () => window.BursRadarSupabase.getUserExamMarks(session),
+    setUserExamMark: (examId, values) => window.BursRadarSupabase.setUserExamMark(examId, values, session),
+    getSchoolPackages: schoolId => window.BursRadarSupabase.getSchoolPackages(schoolId, session),
+    getSchoolPackageRequests: schoolId => window.BursRadarSupabase.getSchoolPackageRequests(schoolId, session),
+    getSchoolExams: schoolId => window.BursRadarSupabase.getSchoolExams(schoolId, session),
+    getAdminPackageRequests: () => window.BursRadarSupabase.getAdminPackageRequests(session),
+    getAdminSchoolPackages: () => window.BursRadarSupabase.getAdminSchoolPackages(session),
+    getAdminUserProfiles: () => window.BursRadarSupabase.getAdminUserProfiles(session),
+    findAdminUserByEmail: email => window.BursRadarSupabase.findAdminUserByEmail(email, session),
+    updateAdminUserRole: payload => window.BursRadarSupabase.updateAdminUserRole(payload, session),
+    getAdminSchools: () => window.BursRadarSupabase.getAdminSchools(session),
+    approvePackageRequest: payload => window.BursRadarSupabase.approvePackageRequest(payload, session),
+    rejectPackageRequest: payload => window.BursRadarSupabase.rejectPackageRequest(payload, session),
+    deactivateSchoolPackage: payload => window.BursRadarSupabase.deactivateSchoolPackage(payload, session),
+    assignSchoolPackage: payload => window.BursRadarSupabase.assignSchoolPackage(payload, session),
+    updateSchoolPackageExpiry: payload => window.BursRadarSupabase.updateSchoolPackageExpiry(payload, session),
+    restrictUserProfile: payload => window.BursRadarSupabase.restrictUserProfile(payload, session),
+    updateSchoolProfile: (schoolId, values) => window.BursRadarSupabase.updateSchoolProfile(schoolId, values, session),
+    updateSchoolTrust: (schoolId, values) => window.BursRadarSupabase.updateSchoolTrust(schoolId, values, session),
+    updateRegistrationTrust: (schoolId, values) => window.BursRadarSupabase.updateRegistrationTrust(schoolId, values, session),
+    updateExamTrust: (examId, values) => window.BursRadarSupabase.updateExamTrust(examId, values, session),
+    uploadSchoolLogo: (schoolId, file) => window.BursRadarSupabase.uploadSchoolLogo(schoolId, file, session),
+    createSchoolExam: (schoolId, values) => window.BursRadarSupabase.createSchoolExam(schoolId, values, session),
+    deleteSchoolExam: examId => window.BursRadarSupabase.deleteSchoolExam(examId, session),
+    createPackageRequest: payload => window.BursRadarSupabase.createPackageRequest(payload, session),
+    notifyPackageRequest: requestId => window.BursRadarSupabase.notifyPackageRequest(requestId, session),
+  };
+  const screenProps = { go, fav, rem, toggleFav, toggleRem, auth, realtimeVersion };
 
   let content;
   if (route.overlay === 'exam') {
@@ -114,6 +278,10 @@ function App() {
     content = <PlanScreen {...screenProps} />;
   } else if (route.tab === 'schools') {
     content = <SchoolsScreen {...screenProps} />;
+  } else if (route.tab === 'account') {
+    content = <AccountScreen params={route.params} {...screenProps} />;
+  } else if (route.tab === 'admin' && auth.profile?.role === 'admin') {
+    content = <AdminPackagesScreen {...screenProps} />;
   }
 
   const tabs = [
@@ -121,6 +289,8 @@ function App() {
     { id: 'exams', label: 'Sınavlar', icon: 'list' },
     { id: 'plan', label: 'Planım', icon: 'bookmark' },
     { id: 'schools', label: 'Okullar', icon: 'school' },
+    { id: 'account', label: 'Hesap', icon: 'user' },
+    ...(auth.profile?.role === 'admin' ? [{ id: 'admin', label: 'Admin', icon: 'shield' }] : []),
   ];
 
   return (
