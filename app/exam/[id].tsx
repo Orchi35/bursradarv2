@@ -4,7 +4,6 @@ import React from 'react';
 import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../../components/Screen';
 import SchoolLogo from '../../components/ui/SchoolLogo';
-import ScoreBadge from '../../components/ui/ScoreBadge';
 import StatusTag from '../../components/ui/StatusTag';
 import VerifyTag from '../../components/ui/VerifyTag';
 import { COLORS, RADIUS, SHADOW } from '../../constants/theme';
@@ -41,7 +40,6 @@ export default function ExamDetailScreen() {
             <Text style={styles.school}>{school?.name}</Text>
             <Text style={styles.meta}>{exam.district} - {exam.city}</Text>
           </View>
-          <ScoreBadge score={exam.scholarshipScore} size="md" />
         </View>
         <Text style={styles.title}>{exam.examName}</Text>
         <View style={styles.tags}>

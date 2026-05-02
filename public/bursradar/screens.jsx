@@ -581,6 +581,7 @@ function SchoolPackagesPanel({ school, auth, forceManage = false, adminMode = fa
     applicationDeadline: '',
     eligibleGrades: '4. Sınıf, 5. Sınıf',
     examLocation: '',
+    applicationUrl: '',
     notes: '',
   });
   const [profileForm, setProfileForm] = useS({
@@ -712,6 +713,7 @@ function SchoolPackagesPanel({ school, auth, forceManage = false, adminMode = fa
         applicationDeadline: '',
         eligibleGrades: '4. Sınıf, 5. Sınıf',
         examLocation: '',
+        applicationUrl: '',
         notes: '',
       });
       setExamFormOpen(false);
@@ -883,6 +885,8 @@ function SchoolPackagesPanel({ school, auth, forceManage = false, adminMode = fa
                   <input value={examForm.eligibleGrades} onChange={e => updateExamField('eligibleGrades', e.target.value)} />
                   <label>Sınav yeri</label>
                   <input value={examForm.examLocation} onChange={e => updateExamField('examLocation', e.target.value)} />
+                  <label>Başvuru Linki</label>
+                  <input type="url" placeholder="https://okulwebsitesi.com/basvuru" value={examForm.applicationUrl} onChange={e => updateExamField('applicationUrl', e.target.value)} />
                   <label>Not</label>
                   <textarea value={examForm.notes} onChange={e => updateExamField('notes', e.target.value)} />
                   <button className="package-request" disabled={sending === 'create-exam'} type="submit">
@@ -1034,12 +1038,14 @@ function DataTrustCard({ school, exams }) {
 }
 
 function TrustForm({ title, value, onSave, busy }) {
+  const hasAppUrl = value && 'applicationUrl' in value;
   const [form, setForm] = useS({
     status: value?.status || 'pending_review',
     source: value?.source || 'unknown',
     verifiedAt: trustDateValue(value?.verifiedAt),
     lastCheckedAt: trustDateValue(value?.lastCheckedAt),
     adminNote: value?.adminNote || '',
+    ...(hasAppUrl ? { applicationUrl: value.applicationUrl || '' } : {}),
   });
 
   useE(() => {
@@ -1049,8 +1055,9 @@ function TrustForm({ title, value, onSave, busy }) {
       verifiedAt: trustDateValue(value?.verifiedAt),
       lastCheckedAt: trustDateValue(value?.lastCheckedAt),
       adminNote: value?.adminNote || '',
+      ...(hasAppUrl ? { applicationUrl: value.applicationUrl || '' } : {}),
     });
-  }, [value?.status, value?.source, value?.verifiedAt, value?.lastCheckedAt, value?.adminNote]);
+  }, [value?.status, value?.source, value?.verifiedAt, value?.lastCheckedAt, value?.adminNote, value?.applicationUrl]);
 
   function update(key, nextValue) {
     setForm(current => ({ ...current, [key]: nextValue }));
@@ -1079,6 +1086,12 @@ function TrustForm({ title, value, onSave, busy }) {
       </div>
       <label>Admin notu</label>
       <textarea value={form.adminNote} onChange={e => update('adminNote', e.target.value)} />
+      {hasAppUrl && (
+        <>
+          <label>Başvuru Linki</label>
+          <input type="url" placeholder="https://okulwebsitesi.com/basvuru" value={form.applicationUrl} onChange={e => update('applicationUrl', e.target.value)} />
+        </>
+      )}
       <button className="package-request" disabled={busy} onClick={() => onSave(form)}>
         {busy ? 'Kaydediliyor...' : 'Kaydet'}
       </button>
@@ -1162,6 +1175,7 @@ function AdminDataTrustPanel({ school, exams, auth }) {
             verifiedAt: exam.verifiedAt,
             lastCheckedAt: exam.lastCheckedAt,
             adminNote: exam.verificationAdminNote,
+            applicationUrl: exam.applicationUrl || '',
           }}
           busy={busy === 'exam:' + exam.id}
           onSave={values => saveExamTrust(exam, values)}
@@ -1817,16 +1831,6 @@ function ExamDetailScreen({ id, go, fav, rem, toggleFav, toggleRem }) {
         </div>
       </div>
 
-      <div className="detail-card">
-        <div className="detail-card-title"><Icon name="sparkle" /> Burs Skoru</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <ScoreBadge score={exam.scholarshipScore} />
-          <div style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Tarih yakınlığı, sınıf eşleşmesi, başvuru durumu ve doğrulama bilgilerine göre hesaplanmış öncelik skoru.
-          </div>
-        </div>
-      </div>
-
       {exam.notes && (
         <div className="detail-card">
           <div className="detail-card-title"><Icon name="edit" /> Notlar</div>
@@ -1845,7 +1849,40 @@ function ExamDetailScreen({ id, go, fav, rem, toggleFav, toggleRem }) {
   );
 }
 
-function AccountScreen({ go, params, auth }) {
+const GOOGLE_SIGN_IN_ENABLED = false;
+
+const THEME_OPTIONS = [
+  { value: 'light',  label: 'Açık Tema',  hint: 'Beyaz arka plan, gündüz kullanım için' },
+  { value: 'dark',   label: 'Koyu Tema',  hint: 'Radar Koyu — gece kullanım için' },
+];
+
+function ThemePicker({ theme, setTheme }) {
+  if (typeof setTheme !== 'function') return null;
+  const active = THEME_OPTIONS.some(o => o.value === theme) ? theme : 'light';
+  return (
+    <div className="theme-card">
+      <div className="theme-card-title">Görünüm</div>
+      <div className="theme-card-sub">Uygulamanın açık veya koyu temada görünmesini seçin.</div>
+      <div className="theme-options" role="radiogroup" aria-label="Tema seçimi">
+        {THEME_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={active === opt.value}
+            className={'theme-option ' + (active === opt.value ? 'on' : '')}
+            onClick={() => setTheme(opt.value)}
+          >
+            <span className="theme-option-label">{opt.label}</span>
+            <span className="theme-option-hint">{opt.hint}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AccountScreen({ go, params, auth, theme, setTheme }) {
   const [mode, setMode] = useS('login');
   const [email, setEmail] = useS('');
   const [password, setPassword] = useS('');
@@ -1935,6 +1972,8 @@ function AccountScreen({ go, params, auth }) {
           {message && <div className="auth-message">{message}</div>}
           <button className="auth-secondary" onClick={auth.signOut}>Çıkış yap</button>
         </div>
+
+        <ThemePicker theme={theme} setTheme={setTheme} />
       </div>
     );
   }
@@ -1956,7 +1995,7 @@ function AccountScreen({ go, params, auth }) {
         <div className="auth-title">{title}</div>
         <div className="auth-sub">{subtitle}</div>
 
-        {mode !== 'forgot' && (
+        {GOOGLE_SIGN_IN_ENABLED && mode !== 'forgot' && (
           <>
             <button type="button" className="auth-google" onClick={handleGoogleSignIn}>
               <span className="auth-google-mark" aria-hidden="true">
@@ -2004,6 +2043,8 @@ function AccountScreen({ go, params, auth }) {
           {mode !== 'forgot' && <button type="button" onClick={() => { setMode('forgot'); setMessage(''); setPasswordConfirm(''); }}>Şifremi unuttum</button>}
         </div>
       </form>
+
+      <ThemePicker theme={theme} setTheme={setTheme} />
     </div>
   );
 }

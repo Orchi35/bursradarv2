@@ -28,7 +28,6 @@ export interface Exam {
   status: 'open' | 'upcoming' | 'closed';
   verificationStatus: 'verified' | 'pending' | 'outdated';
   sourceType: string;
-  scholarshipScore: number;
   isFeatured?: boolean;
   examLocation?: string;
   applicationUrl?: string;

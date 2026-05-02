@@ -1,18 +1,6 @@
 // BursRadar — shared UI components
 const { useState, useEffect, useRef } = React;
 
-// Score badge with conic ring
-function ScoreBadge({ score }) {
-  const cls = score >= 80 ? '' : score >= 60 ? 'score-mid' : 'score-low';
-  const color = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warning)' : 'var(--error)';
-  return (
-    <div className={'score-badge ' + cls} style={{ '--p': score }}>
-      <div className="score-ring" />
-      <span style={{ color, position: 'relative', zIndex: 2 }}>{score}</span>
-    </div>
-  );
-}
-
 function SchoolLogo({ school, size }) {
   const initials = window.schoolInitials(school.name);
   const w = size || 42;
@@ -77,7 +65,6 @@ function ExamCard({ exam, compact, onOpen, fav, rem, onFav, onRem }) {
             <Icon name="pin" style={{ width: 10, height: 10 }} /> {exam.district}
           </div>
         </div>
-        <ScoreBadge score={exam.scholarshipScore} />
       </div>
 
       <div className="exam-name">{exam.examName}</div>
@@ -222,4 +209,4 @@ function Toast({ msg }) {
   );
 }
 
-Object.assign(window, { ScoreBadge, SchoolLogo, VerifyTag, StatusTag, ExamCard, SchoolCard, SelectSheet, Toast });
+Object.assign(window, { SchoolLogo, VerifyTag, StatusTag, ExamCard, SchoolCard, SelectSheet, Toast });

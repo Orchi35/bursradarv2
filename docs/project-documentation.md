@@ -220,8 +220,8 @@ Behavior:
 - It then attempts to fetch `schools` and `exams` from Supabase via
   `selectRows`. Supabase column names are mapped to the TypeScript types
   declared in `types/index.ts` (e.g. `is_verified` → `verified`,
-  `applicable_grades` → `eligibleGrades`, `scholarship_rate` →
-  `scholarshipScore`, `registration_end_date` → `registrationDeadline`,
+  `applicable_grades` → `eligibleGrades`,
+  `registration_end_date` → `registrationDeadline`,
   `about_text` → `description`, etc.).
 - Exam status (`open`/`upcoming`/`closed`) is derived from the application
   start/deadline dates, since the schema does not store a status column.
@@ -560,6 +560,67 @@ Update the relevant section and add a dated entry to the Change Log. Examples of
 - Security or privacy behavior change.
 
 ## Change Log
+
+### 2026-05-02 (HTML koyu tema desteği)
+
+- Added user-facing theme support to the HTML app with two modes: `light`
+  and `dark`. Default is `light` so existing installs see no visual change.
+- Theme preference persists in `localStorage` under `bursradar:theme` and
+  survives page reloads.
+- Implementation in `public/bursradar/BursRadar.html`: top-level `App`
+  introduces a `theme` state initialised from localStorage, a memoised
+  `setTheme(mode)` setter that writes localStorage, and a single `useEffect`
+  that applies `data-theme` to `document.documentElement`.
+- The dev `Tweaks` panel theme radio (`light` / `Radar Koyu`) drives the
+  same `setTheme` so developer preview and end-user state stay in sync.
+- Added an HTML `ThemePicker` component to `public/bursradar/screens.jsx`,
+  rendered inside `AccountScreen` after the auth card in both signed-in and
+  signed-out states. Two radio-style cards: `Açık Tema`, `Koyu Tema`.
+- Added theme-card styles to `public/bursradar/styles.css`. The card and its
+  options use the existing `--surface`, `--bg`, `--border`, and
+  `--text-primary` variables, so they automatically adapt to the active
+  theme.
+- Hero text readability fix: `.hero { color: var(--white) }` was rendering
+  hero titles in dark slate (`#11264F`) under dark theme because the dark
+  override redefines `--white` as a light surface token (used by `.tabbar`).
+  Hero now uses literal `#FFFFFF` so "BursRadar", "Burs sınavlarını
+  kaçırma." and the hero subtitle stay legible on the dark gradient.
+- The existing dark theme CSS coverage in `styles.css` already extends to
+  forms, the auth card, school cards (including featured schools and
+  registration pills), exam cards, action buttons, status/verify tags, the
+  filter bar, the trust card, and the data trust admin UI. No additional
+  rules required for these surfaces.
+- Auth, package, realtime, school profile editing, data trust system, and
+  exam/registration date logic are untouched.
+
+### 2026-05-02 (Burs Skoru kaldırma + Google butonu gizleme)
+
+- Removed the "Burs Skoru" priority score feature from the entire UI surface:
+  the score badge (circular conic-gradient indicator), the "Burs Skoru" detail
+  card on the HTML exam detail screen, and the badge on native ExamCard / exam
+  detail header.
+- Deleted `components/ui/ScoreBadge.tsx`. Removed the `ScoreBadge` JSX
+  component definition from `public/bursradar/components.jsx`, including the
+  `window` export entry. Removed `.score-badge`, `.score-ring`, `.score-mid`,
+  and `.score-low` CSS rules from `public/bursradar/styles.css`.
+- Removed `scholarshipScore: number` field from the `Exam` type in
+  `types/index.ts`. Removed the field from mock data in `data/mock.ts` and
+  `public/bursradar/data.js`. Removed the mapping in
+  `services/dataService.ts` (`mapExam`) and the dual mapping in
+  `public/bursradar/supabase-client.js` (`fromDbExam`). The HTML write path
+  in `supabase-client.js` continues to write `scholarship_rate` from
+  `scholarshipRate`.
+- The `exams.scholarship_rate` database column is intentionally NOT removed.
+  Its semantic meaning is "burs yüzdesi" (scholarship percentage 0-100, e.g.,
+  %25/%50/%100), not the priority score. The frontend `scholarshipRate` field
+  in `public/bursradar/supabase-client.js` still maps from this column for
+  future use even though no UI currently consumes it.
+- Hid the "Google ile devam et" button in the HTML `Hesap` (login/register)
+  screen behind the `GOOGLE_SIGN_IN_ENABLED` feature flag in
+  `public/bursradar/screens.jsx`. The `handleGoogleSignIn` handler, the JSX,
+  the `auth-google` styling, the OAuth handoff in
+  `components/BursRadarHtmlApp.tsx`, and Supabase Google provider config are
+  preserved. Set `GOOGLE_SIGN_IN_ENABLED = true` to re-enable.
 
 ### 2026-05-02 (safe clickable links)
 
