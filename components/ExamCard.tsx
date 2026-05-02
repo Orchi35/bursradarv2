@@ -7,7 +7,6 @@ import { useData } from '../context/DataContext';
 import { Exam } from '../types';
 import { daysUntilLabel, formatDate, urgency } from '../utils/date';
 import SchoolLogo from './ui/SchoolLogo';
-import ScoreBadge from './ui/ScoreBadge';
 import StatusTag from './ui/StatusTag';
 import VerifyTag from './ui/VerifyTag';
 
@@ -40,7 +39,6 @@ export default function ExamCard({ exam, compact, favorite, reminder, onToggleFa
           <Text style={styles.school} numberOfLines={1}>{school.name}</Text>
           <Text style={styles.meta}><FontAwesome name="map-marker" size={11} /> {exam.district}</Text>
         </View>
-        <ScoreBadge score={exam.scholarshipScore} />
       </View>
 
       <Text style={styles.examName} numberOfLines={compact ? 2 : 3}>{exam.examName}</Text>

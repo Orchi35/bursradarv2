@@ -24,7 +24,21 @@
 <script type="text/babel" src="screens.jsx?v=31"></script>
 
 <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState, useEffect, useCallback } = React;
+
+const THEME_STORAGE_KEY = 'bursradar:theme';
+const THEME_VALUES = ['light', 'dark'];
+
+function readStoredTheme() {
+  try {
+    const v = localStorage.getItem(THEME_STORAGE_KEY);
+    return THEME_VALUES.includes(v) ? v : 'light';
+  } catch (_) { return 'light'; }
+}
+
+function persistTheme(mode) {
+  try { localStorage.setItem(THEME_STORAGE_KEY, mode); } catch (_) {}
+}
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "light",
@@ -44,10 +58,18 @@ function App() {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [realtimeVersion, setRealtimeVersion] = useState(0);
+  const [theme, setThemeState] = useState(readStoredTheme);
+
+  const setTheme = useCallback((mode) => {
+    if (!THEME_VALUES.includes(mode)) return;
+    setThemeState(mode);
+    persistTheme(mode);
+    setTweak('theme', mode);
+  }, [setTweak]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', tweaks.theme === 'dark' ? 'dark' : 'light');
-  }, [tweaks.theme]);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     let mounted = true;
@@ -269,7 +291,7 @@ function App() {
     createPackageRequest: payload => window.BursRadarSupabase.createPackageRequest(payload, session),
     notifyPackageRequest: requestId => window.BursRadarSupabase.notifyPackageRequest(requestId, session),
   };
-  const screenProps = { go, fav, rem, toggleFav, toggleRem, auth, realtimeVersion };
+  const screenProps = { go, fav, rem, toggleFav, toggleRem, auth, realtimeVersion, theme, setTheme };
 
   let content;
   if (route.overlay === 'exam') {
@@ -320,9 +342,9 @@ function App() {
 
       <TweaksPanel title="Tweaks">
         <TweakSection label="Görünüm">
-          <TweakRadio label="Tema" value={tweaks.theme}
+          <TweakRadio label="Tema" value={theme}
                       options={[{ value: 'light', label: 'Açık' }, { value: 'dark', label: 'Radar Koyu' }]}
-                      onChange={v => setTweak('theme', v)} />
+                      onChange={v => setTheme(v)} />
           <TweakRadio label="Yoğunluk" value={tweaks.density}
                       options={[{ value: 'cozy', label: 'Rahat' }, { value: 'compact', label: 'Sıkı' }]}
                       onChange={v => setTweak('density', v)} />

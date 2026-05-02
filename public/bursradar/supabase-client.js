@@ -113,7 +113,6 @@
       verificationAdminNote: row.verification_admin_note || undefined,
       isFeatured:           row.is_featured             ?? false,
       scholarshipRate:      row.scholarship_rate        ?? null,
-      scholarshipScore:     row.scholarship_rate        ?? 50,
       examLocation:         row.exam_location           || undefined,
       applicationUrl:       row.application_url         || undefined,
       notes:                row.notes                   || undefined,
@@ -503,6 +502,7 @@
     if ('verifiedAt'         in values) body.verified_at             = values.verifiedAt         || null;
     if ('lastCheckedAt'      in values) body.last_checked_at         = values.lastCheckedAt      || null;
     if ('adminNote'          in values) body.verification_admin_note = values.adminNote          || null;
+    if ('applicationUrl'     in values) body.application_url         = values.applicationUrl     || null;
     if (nextStatus === 'official_verified') {
       body.verified_at = nowIso;
       body.last_checked_at = nowIso;

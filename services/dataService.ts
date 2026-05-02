@@ -88,7 +88,6 @@ function mapExam(row: SupabaseExam, schoolMap: Map<string, School>): Exam {
     status: deriveExamStatus(row),
     verificationStatus: row.is_verified ? 'verified' : 'pending',
     sourceType: 'official_website',
-    scholarshipScore: row.scholarship_rate ?? 0,
     isFeatured: row.is_featured,
     examLocation: row.exam_location ?? undefined,
     applicationUrl: row.application_url ?? undefined,
