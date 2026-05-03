@@ -148,6 +148,10 @@ function openLink(url) {
     alert('Bu link güvenli bir protokol içermiyor ve açılamıyor.');
     return;
   }
+  if (window.ReactNativeWebView) {
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'openLink', url }));
+    return;
+  }
   const win = window.open(url, '_blank', 'noopener,noreferrer');
   if (!win) alert('Link açılamadı. Lütfen tarayıcı pop-up engelleyicisini kontrol edin.');
 }

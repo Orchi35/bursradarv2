@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import { Linking as RNLinking } from 'react-native';
 import React, { useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
@@ -66,6 +67,12 @@ export default function BursRadarHtmlApp() {
   async function handleMessage(event: WebViewMessageEvent) {
     try {
       const payload = JSON.parse(event.nativeEvent.data);
+
+      if (payload?.type === 'openLink' && typeof payload.url === 'string') {
+        await RNLinking.openURL(payload.url);
+        return;
+      }
+
       if (payload?.type !== 'oauth' || typeof payload.url !== 'string') return;
 
       const result = await WebBrowser.openAuthSessionAsync(payload.url, redirectTo);
