@@ -1891,6 +1891,8 @@ function AccountScreen({ go, params, auth, theme, setTheme }) {
   const [resending, setResending] = useS(false);
   const [message, setMessage] = useS('');
   const [confirmationEmail, setConfirmationEmail] = useS('');
+  const [deleteConfirm, setDeleteConfirm] = useS(false);
+  const [deleting, setDeleting] = useS(false);
   const returnTo = params?.returnTo || 'plan';
   const canOpenOwnSchool = auth.profile?.role === 'school_user' && !!auth.profile?.school_id;
 
@@ -1972,21 +1974,18 @@ function AccountScreen({ go, params, auth, theme, setTheme }) {
     );
   }
 
-  if (auth.user) {
-    const [deleteConfirm, setDeleteConfirm] = useS(false);
-    const [deleting, setDeleting] = useS(false);
-
-    async function handleDeleteAccount() {
-      setDeleting(true);
-      try {
-        await auth.deleteAccount(auth.session);
-      } catch (err) {
-        setDeleting(false);
-        setDeleteConfirm(false);
-        setMessage('Hesap silinemedi: ' + (err?.message || 'Bilinmeyen hata'));
-      }
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await auth.deleteAccount(auth.session);
+    } catch (err) {
+      setDeleting(false);
+      setDeleteConfirm(false);
+      setMessage('Hesap silinemedi: ' + (err?.message || 'Bilinmeyen hata'));
     }
+  }
 
+  if (auth.user) {
     return (
       <div className="page-enter">
         <div className="page-header">
