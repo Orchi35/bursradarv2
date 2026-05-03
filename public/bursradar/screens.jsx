@@ -1973,6 +1973,20 @@ function AccountScreen({ go, params, auth, theme, setTheme }) {
   }
 
   if (auth.user) {
+    const [deleteConfirm, setDeleteConfirm] = useS(false);
+    const [deleting, setDeleting] = useS(false);
+
+    async function handleDeleteAccount() {
+      setDeleting(true);
+      try {
+        await auth.deleteAccount(auth.session);
+      } catch (err) {
+        setDeleting(false);
+        setDeleteConfirm(false);
+        setMessage('Hesap silinemedi: ' + (err?.message || 'Bilinmeyen hata'));
+      }
+    }
+
     return (
       <div className="page-enter">
         <div className="page-header">
@@ -1998,6 +2012,25 @@ function AccountScreen({ go, params, auth, theme, setTheme }) {
         </div>
 
         <ThemePicker theme={theme} setTheme={setTheme} />
+
+        <div style={{ padding: '0 16px 32px' }}>
+          {!deleteConfirm ? (
+            <button className="delete-account-btn" onClick={() => setDeleteConfirm(true)}>
+              Hesabı Sil
+            </button>
+          ) : (
+            <div className="delete-account-confirm">
+              <div className="delete-account-confirm-title">Hesabınız kalıcı olarak silinecek</div>
+              <div className="delete-account-confirm-sub">Bu işlem geri alınamaz. Tüm verileriniz silinir.</div>
+              <button className="delete-account-btn" disabled={deleting} onClick={handleDeleteAccount}>
+                {deleting ? 'Siliniyor...' : 'Evet, hesabımı sil'}
+              </button>
+              <button className="auth-secondary" style={{ marginTop: 8 }} disabled={deleting} onClick={() => setDeleteConfirm(false)}>
+                Vazgeç
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

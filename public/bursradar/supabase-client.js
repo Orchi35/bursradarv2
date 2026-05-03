@@ -279,6 +279,11 @@
     if (error) throw error;
   }
 
+  async function deleteAccount(session) {
+    await restRpc('delete_user', {}, session);
+    await sb.auth.signOut();
+  }
+
   async function signInWithGoogle() {
     const isNative = window.ReactNativeWebView != null;
     const redirectTo = isNative
@@ -682,6 +687,7 @@
     signUp,
     resendSignupConfirmation,
     signOut,
+    deleteAccount,
     signInWithGoogle,
     resetPassword,
     getCurrentUserProfile,
