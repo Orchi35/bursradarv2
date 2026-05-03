@@ -255,7 +255,13 @@
   }
 
   async function signUp(email, password) {
-    const { data, error } = await sb.auth.signUp({ email, password });
+    const redirectTo = window.ReactNativeWebView != null
+      ? window.BURSRADAR_AUTH_REDIRECT_TO
+      : `${window.location.origin}${window.location.pathname}`;
+    const { data, error } = await sb.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: redirectTo },
+    });
     if (error) throw error;
     return data?.session || null;
   }
