@@ -111,7 +111,6 @@ function App() {
     function handleDataReady() {
       syncPlanDefaults();
       setDataVersion(v => v + 1);
-      showToast('Supabase verisi y\u00fcklendi');
     }
     window.addEventListener('bursradar:data-ready', handleDataReady);
     if (window.BURSRADAR_DATA_READY) handleDataReady();
