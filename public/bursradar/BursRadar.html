@@ -264,6 +264,7 @@ function App() {
     resendSignupConfirmation,
     resetPassword,
     signOut,
+    deleteAccount: () => window.BursRadarSupabase.deleteAccount(session),
     getUserExamMarks: () => window.BursRadarSupabase.getUserExamMarks(session),
     setUserExamMark: (examId, values) => window.BursRadarSupabase.setUserExamMark(examId, values, session),
     getSchoolPackages: schoolId => window.BursRadarSupabase.getSchoolPackages(schoolId, session),

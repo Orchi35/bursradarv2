@@ -1963,6 +1963,17 @@ function AccountScreen({ go, params, auth, theme, setTheme }) {
     auth.signInWithGoogle();
   }
 
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await auth.deleteAccount();
+    } catch (err) {
+      setDeleting(false);
+      setDeleteConfirm(false);
+      setMessage('Hesap silinemedi: ' + (err?.message || 'Bilinmeyen hata'));
+    }
+  }
+
   if (auth.loading) {
     return (
       <div className="page-enter">
@@ -1972,17 +1983,6 @@ function AccountScreen({ go, params, auth, theme, setTheme }) {
         </div>
       </div>
     );
-  }
-
-  async function handleDeleteAccount() {
-    setDeleting(true);
-    try {
-      await auth.deleteAccount(auth.session);
-    } catch (err) {
-      setDeleting(false);
-      setDeleteConfirm(false);
-      setMessage('Hesap silinemedi: ' + (err?.message || 'Bilinmeyen hata'));
-    }
   }
 
   if (auth.user) {
