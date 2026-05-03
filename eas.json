@@ -15,13 +15,19 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BURSRADAR_WEB_URL": "https://orchi35.github.io/bursradarv2/public/bursradar/BursRadar.html"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
       },
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_BURSRADAR_WEB_URL": "https://orchi35.github.io/bursradarv2/public/bursradar/BursRadar.html"
+      }
     }
   },
   "submit": {
