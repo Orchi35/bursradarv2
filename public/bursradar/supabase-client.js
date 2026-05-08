@@ -255,9 +255,7 @@
   }
 
   async function signUp(email, password) {
-    const redirectTo = window.ReactNativeWebView != null
-      ? window.BURSRADAR_AUTH_REDIRECT_TO
-      : `${window.location.origin}${window.location.pathname}`;
+    const redirectTo = 'https://orchi35.github.io/bursradarv2/public/bursradar/verified.html';
     const { data, error } = await sb.auth.signUp({
       email, password,
       options: { emailRedirectTo: redirectTo },
